@@ -1,0 +1,4 @@
+[submodule "domain366/Apps12"]
+	path = domain366/Apps12
+	url = git@github.com:domain366/Apps12.git
+	branch = master
