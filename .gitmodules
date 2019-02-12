@@ -17,3 +17,8 @@
 	path = domain366/Apps12Mod
 	url = git@github.com:domain366/Apps12Mod.git
 	branch = master
+
+[submodule "domain366/remittance"]
+	path = domain366/remittance
+	url = git@github.com:domain366/remittance.git
+	branch = master
