@@ -22,3 +22,8 @@
 	path = domain366/remittance
 	url = git@github.com:domain366/remittance.git
 	branch = master
+
+[submodule "GentecAustralia/App12Mod"]
+	path = GentecAustralia/App12Mod
+	url = git@github.com:GentecAustralia/App12Mod.git
+	branch = master
