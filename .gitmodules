@@ -17,3 +17,8 @@
 	path = domain366/Apps12Mod
 	url = git@github.com:domain366/Apps12Mod.git
 	branch = master
+
+[submodule "GentecAustralia/App12Mod-2"]
+	path = GentecAustralia/App12Mod-2
+	url = git@github.com:GentecAustralia/App12Mod-2.git
+	branch = master
