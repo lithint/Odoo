@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<odoo>
+
+        <report
+                id="report_custom_picking"
+                string="Custom Picking Order"
+                model="stock.picking"
+                name="custom_au_in.report_custom_picking_order"
+                file="custom_au_in.report_custom_picking_order"
+                report_type="qweb-pdf"
+            />
+        </odoo>

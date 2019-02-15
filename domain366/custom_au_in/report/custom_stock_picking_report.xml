@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_custom_picking_order" name="custom_pick">
+        <t t-call="web.external_layout">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="doc">
+                    <div class="page">
+                        <table style="border-width:1px 0; border-style:solid;" width="100%">
+                        <thead>
+                            <tr style="background-color:#D3D3D3;" width="100%">
+                                <th width="25%"><strong>Part Id</strong></th>
+                                <th width="25%"><strong>Description</strong></th>
+                                <th width="15%"><strong>On Hand</strong></th>
+                                <th width="15%"><strong>Orderd</strong></th>
+                                <th width="10%"><strong>Unit</strong></th>
+                                <th width="10%"><strong>Committed</strong></th>
+                            </tr>
+                            <tbody>
+                                <t t-if="kit_prod">
+                                    <tr t-foreach="kit_prod" t-as="kit_line">
+                                        <td>
+                                            <strong><t t-esc="kit_line[0]"/></strong>
+                                        </td>
+                                        <td>
+                                            <strong><t t-esc="kit_line[1]"/></strong>
+                                        </td>
+                                        <td></td>
+                                        <td>
+                                            <strong><t t-esc="kit_line[2]"/></strong>
+                                        </td>
+                                        <td></td>
+                                        <td>
+                                            <strong><t t-esc="kit_line[3]"/></strong>
+                                        </td>
+                                        <tr t-foreach='kit_prod[kit_line]' t-as='kit_line_data'>
+                                            <td>
+                                                <t t-esc="kit_line_data[0]" />
+                                            </td>
+                                            <td>
+                                                <t t-esc="kit_line_data[1]"/>
+                                            </td>
+                                            <td>
+                                                <t t-esc="kit_line_data[2]"/>
+                                            </td>
+                                            <td>
+                                                <t t-esc="kit_line_data[3]"/>
+                                            </td>
+                                            <td></td>
+                                            <td>
+                                                <t t-esc="kit_line_data[4]"/>
+                                            </td>
+                                        </tr>
+                                    </tr>
+                                </t>
+                                <t t-if="non_kit_prod">
+                                    <tr t-foreach="non_kit_prod" t-as="non_kit_line">
+                                        <td>
+                                            <t t-esc="non_kit_line[0]" />
+                                        </td>
+                                        <td>
+                                            <t t-esc="non_kit_line[1]"/>
+                                        </td>
+                                        <td>
+                                            <t t-esc="non_kit_line[2]"/>
+                                        </td>
+                                        <td>
+                                            <t t-esc="non_kit_line[3]"/>
+                                        </td>
+                                        <td></td>
+                                        <td>
+                                            <t t-esc="non_kit_line[4]"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </thead>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </t>
+</template>
+</odoo>
