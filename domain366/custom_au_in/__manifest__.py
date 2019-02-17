@@ -6,7 +6,7 @@
     'version': '12.0.0.0',
     'category': 'Accounting',
     'summary': 'This apps automatically create invoice from Picking when picking(Shipment/Delivery) get done',
-    'description': """ This apps automatically create invoice from Picking when picking(Shipment/Delivery) get done
+    'description': """ This apps Custom_Au_in automatically create invoice from Picking when picking(Shipment/Delivery) get done
 """,
     'depends': ['sale','purchase','stock','Au_In12'],
     'data': [
