@@ -22,14 +22,14 @@ class StockPickingReport(models.AbstractModel):
                     for move_line in picking.move_lines:
                         if bom_lines.product_id.id == move_line.product_id.id:
                             # move_line_kit_list.append([move_line.product_id.name,move_line.name,move_line.product_id.qty_available,
-                            move_line_kit_list.append([move_line.product_id.default_code,move_line.name,move_line.product_id.qty_available,
+                            move_line_kit_list.append([move_line.product_id.default_code,move_line.product_id.name,move_line.product_id.qty_available,
                                 move_line.product_uom_qty,move_line.reserved_availability])
                     sale_move_prod.update({key:move_line_kit_list})
             else:
                 for move_line in picking.move_lines:
                     if sale_lines.product_id.id == move_line.product_id.id:
                         #move_line_non_kit.append([move_line.product_id.name,move_line.name,move_line.product_id.qty_available,
-                        move_line_non_kit.append([move_line.product_id.default_code,move_line.name,move_line.product_id.qty_available,
+                        move_line_non_kit.append([move_line.product_id.default_code,move_line.product_id.name,move_line.product_id.qty_available,
                                 move_line.product_uom_qty,move_line.reserved_availability])
         return {
             'doc_ids': docids,
