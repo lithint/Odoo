@@ -7,6 +7,6 @@
                 model="stock.picking"
                 name="custom_au_in.report_custom_picking_order"
                 file="custom_au_in.report_custom_picking_order"
-                report_type="qweb-pdf"
+                report_type="qweb-html"
             />
         </odoo>
