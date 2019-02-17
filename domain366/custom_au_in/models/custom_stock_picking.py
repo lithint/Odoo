@@ -62,7 +62,8 @@ class StockPicking(models.Model):
                 'account_id': account.id,
                 'invoice_id': account_invoice_obj.id,
                 'price_unit': sale_line.price_unit,
-                'quantity': 0.0,
+                # 'quantity': 0.0,
+                'quantity': sale_line.product_uom_qty,
                 'uom_id': sale_line.product_id.uom_id.id,
                 'product_id': sale_line.product_id.id})
             sale_line .write({'qty_to_invoice':sale_line.qty_delivered})
@@ -92,7 +93,8 @@ class StockPicking(models.Model):
                 inv_lines.unlink()
             for sale_line in sale_order.order_line:
                 if sale_line.product_id.product_tmpl_id.bom_ids:
-                    if inital_qty != ship_qty:
+                    # if inital_qty != ship_qty:
+                    if inital_qty == ship_qty:
                         self.invoice_lines_creation()
                     else:
                         invoice_line_id = inv_line_obj.create({
