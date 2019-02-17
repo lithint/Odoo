@@ -13,7 +13,8 @@ class StockPickingReport(models.AbstractModel):
         picking = self.env[report.model].browse(docids)
         sale_move_prod = {}
         for sale_lines in self.env['sale.order.line'].search([('order_id','=',picking.origin)]):
-            key = (sale_lines.product_id.name,sale_lines.name,sale_lines.product_uom_qty,sale_lines.product_id.qty_available)
+            # key = (sale_lines.product_id.,sale_lines.name,sale_lines.product_uom_qty,sale_lines.product_id.qty_available)
+            key = (sale_lines.product_id.default_code,sale_lines.product_id.name,sale_lines.product_uom_qty,sale_lines.product_id.qty_available)
             bom_id = sale_lines.product_id.product_tmpl_id.bom_ids
             move_line_kit_list = []
             move_line_non_kit = []
