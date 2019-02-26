@@ -14,7 +14,7 @@ class MailFollowers(models.Model):
     return super(MailFollowers, self).create(new_vals_list)
 
 
-@api.model
+    @api.model
     def create(self, vals):
         if vals.get('res_model') != 'account.invoice':
             return super(MailFollowers, self).create(vals)
