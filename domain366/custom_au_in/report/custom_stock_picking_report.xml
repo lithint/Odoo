@@ -11,7 +11,7 @@
                                 <th width="25%"><strong>Part Id</strong></th>
                                 <th width="25%"><strong>Description</strong></th>
                                 <th width="15%"><strong>On Hand</strong></th>
-                                <th width="15%"><strong>Orderd</strong></th>
+                                <th width="15%"><strong>Ordered</strong></th>
                                 <th width="10%"><strong>Unit</strong></th>
                                 <th width="10%"><strong>Committed</strong></th>
                             </tr>
