@@ -116,3 +116,8 @@ class StockPicking(models.Model):
             if flag == 1:
                 self.invoice_line_non_kit()
         return True
+
+    @api.multi
+    def do_print_picking_2(self):
+        self.write({'x_studio_delivery_printed': True})
+        return self.env.ref('stock.action_report_delivery').report_action(self)
