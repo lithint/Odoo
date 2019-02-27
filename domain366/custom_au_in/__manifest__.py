@@ -12,6 +12,7 @@
     'data': [
         'report/custom_report.xml',
         'report/custom_stock_picking_report.xml',
+        'views/stock_picking.xml',
         ],
     'demo': [],
     'js': [],
