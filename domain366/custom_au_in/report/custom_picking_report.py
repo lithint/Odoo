@@ -22,7 +22,7 @@ class StockPickingReport(models.AbstractModel):
                 for bom_lines in bom_id.bom_line_ids:
                     for move_line in picking.move_lines:
                         if move_line.sale_line_id:
-                            if move_line.sale_line_id == sale_lines:
+                            if move_line.sale_line_id == sale_lines and bom_lines.product_id.id == move_line.product_id.id:
                                 # move_line_kit_list.append([move_line.product_id.name,move_line.name,move_line.product_id.qty_available,
                                 move_line_kit_list.append([move_line.product_id.default_code,move_line.product_id.name,move_line.product_id.qty_available,
                                     move_line.product_uom_qty,move_line.reserved_availability])
@@ -30,7 +30,7 @@ class StockPickingReport(models.AbstractModel):
             else:
                 for move_line in picking.move_lines:
                     if move_line.sale_line_id:
-                        if move_line.sale_line_id == sale_lines:
+                        if move_line.sale_line_id == sale_lines and bom_lines.product_id.id == move_line.product_id.id:
                             #move_line_non_kit.append([move_line.product_id.name,move_line.name,move_line.product_id.qty_available,
                             move_line_non_kit.append([move_line.product_id.default_code,move_line.product_id.name,move_line.product_id.qty_available,
                                     move_line.product_uom_qty,move_line.reserved_availability])
