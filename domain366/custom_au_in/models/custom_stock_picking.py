@@ -66,7 +66,7 @@ class StockPicking(models.Model):
                 'quantity': sale_line.product_uom_qty,
                 'uom_id': sale_line.product_id.uom_id.id,
                 'product_id': sale_line.product_id.id})
-            sale_line .write({'qty_to_invoice':sale_line.qty_delivered})
+            sale_line .write({'qty_to_invoice':sale_line.qty_delivered, 'invoice_lines': [(6,0,[invoice_line_id.id])]})
             tax_ids = []
             if sale_line[0]:
                 for tax in sale_line[0].tax_id:
@@ -82,6 +82,21 @@ class StockPicking(models.Model):
             for moves in mo_id.move_line_ids:
                 inital_qty = moves.product_uom_qty
                 ship_qty = moves.qty_done
+        if self.sale_id.carrier_id:
+            self.sale_id._remove_delivery_line()
+            self.sale_id.delivery_rating_success = False
+            res = self.sale_id.carrier_id.rate_shipment(self.sale_id)
+            if res['success']:
+                self.sale_id.delivery_rating_success = True
+                self.sale_id.delivery_price = res['price']
+                self.carrier_price = res['price']
+                self.sale_id.delivery_message = res['warning_message']
+            else:
+                self.sale_id.delivery_rating_success = False
+                self.sale_id.delivery_price = 0.0
+                self.sale_id.delivery_message = res['error_message']
+            self._add_delivery_cost_to_so()
+            self.sale_id.invoice_shipping_on_delivery = False
         res = super(StockPicking, self).action_done()
         account_invoice_obj = self.env['account.invoice'].search([('sale_id','=',self.origin)],limit=1)
         sale_order  =  self.env['sale.order'].search([('name', '=',self.origin )])
@@ -105,7 +120,7 @@ class StockPicking(models.Model):
                                         'quantity': sale_line.product_uom_qty,
                                         'uom_id': sale_line.product_id.uom_id.id,
                                         'product_id': sale_line.product_id.id})
-                        sale_line .write({'qty_to_invoice':sale_line.qty_delivered})
+                        sale_line .write({'qty_to_invoice':sale_line.qty_delivered, 'invoice_lines': [(6,0,[invoice_line_id.id])]})
                         tax_ids = []
                         if sale_line[0]:
                             for tax in sale_line[0].tax_id:
