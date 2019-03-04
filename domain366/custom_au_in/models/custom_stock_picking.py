@@ -1,5 +1,6 @@
 
 from odoo import api, fields, models, _
+import datetime
 
 class StockPicking(models.Model):
     _inherit = "stock.picking"
@@ -24,7 +25,7 @@ class StockPicking(models.Model):
                         })
                 order_line_ids = sale_order_line_obj.search([('order_id', '=', sale_order.id),('product_id', '=',sale_line.product_id.id )])
                 for order_line in order_line_ids:
-                    order_line.write({'qty_to_invoice':sale_line.product_uom_qty,'invoice_lines':[(4,inv_line.id)]})
+                    order_line.write({'qty_to_invoice':sale_line.product_uom_qty,'invoice_lines':[(4,inv_line.id,0)]})
 
                     tax_ids = []
                     if order_line and order_line_ids[0]:
@@ -66,7 +67,7 @@ class StockPicking(models.Model):
                 'quantity': sale_line.product_uom_qty,
                 'uom_id': sale_line.product_id.uom_id.id,
                 'product_id': sale_line.product_id.id})
-            sale_line .write({'qty_to_invoice':sale_line.qty_delivered})
+            sale_line.write({'qty_to_invoice':sale_line.qty_delivered, 'invoice_lines': [(4,inv_line_id.id,0)]})
             tax_ids = []
             if sale_line[0]:
                 for tax in sale_line[0].tax_id:
@@ -78,10 +79,21 @@ class StockPicking(models.Model):
 
     @api.multi
     def action_done(self):
-        for mo_id in self.move_lines:
-            for moves in mo_id.move_line_ids:
-                inital_qty = moves.product_uom_qty
-                ship_qty = moves.qty_done
+        if self.sale_id.carrier_id:
+            self.sale_id._remove_delivery_line()
+            self.sale_id.delivery_rating_success = False
+            res = self.sale_id.carrier_id.rate_shipment(self.sale_id)
+            if res['success']:
+                self.sale_id.delivery_rating_success = True
+                self.sale_id.delivery_price = res['price']
+                self.carrier_price = res['price']
+                self.sale_id.delivery_message = res['warning_message']
+            else:
+                self.sale_id.delivery_rating_success = False
+                self.sale_id.delivery_price = 0.0
+                self.sale_id.delivery_message = res['error_message']
+            self._add_delivery_cost_to_so()
+            self.sale_id.invoice_shipping_on_delivery = False
         res = super(StockPicking, self).action_done()
         account_invoice_obj = self.env['account.invoice'].search([('sale_id','=',self.origin)],limit=1)
         sale_order  =  self.env['sale.order'].search([('name', '=',self.origin )])
@@ -94,28 +106,29 @@ class StockPicking(models.Model):
                 inv_lines.unlink()
             for sale_line in sale_order.order_line:
                 if sale_line.product_id.product_tmpl_id.bom_ids:
-                    if inital_qty != ship_qty:
-                        self.invoice_lines_creation()
-                    else:
-                        invoice_line_id = inv_line_obj.create({
-                                        'name': sale_line.name,
-                                        'account_id': account.id,
-                                        'invoice_id':account_invoice_obj.id,
-                                        'price_unit': sale_line.price_unit,
-                                        'quantity': sale_line.product_uom_qty,
-                                        'uom_id': sale_line.product_id.uom_id.id,
-                                        'product_id': sale_line.product_id.id})
-                        sale_line .write({'qty_to_invoice':sale_line.qty_delivered})
-                        tax_ids = []
-                        if sale_line[0]:
-                            for tax in sale_line[0].tax_id:
-                                tax_ids.append(tax.id)
-                        invoice_line_id.write({'price_unit':sale_line[0].price_unit, 'discount': sale_line[0].discount, 'invoice_line_tax_ids': [(6,0,tax_ids)]})
-                        account_invoice_obj.compute_taxes()
+                    invoice_line_id = inv_line_obj.create({
+                                    'name': sale_line.name,
+                                    'account_id': account.id,
+                                    'invoice_id':account_invoice_obj.id,
+                                    'price_unit': sale_line.price_unit,
+                                    'quantity': sale_line.product_uom_qty,
+                                    'uom_id': sale_line.product_id.uom_id.id,
+                                    'product_id': sale_line.product_id.id})
+                    sale_line.write({'qty_to_invoice':sale_line.qty_delivered, 'invoice_lines': [(4,invoice_line_id.id,0)]})
+                    tax_ids = []
+                    if sale_line[0]:
+                        for tax in sale_line[0].tax_id:
+                            tax_ids.append(tax.id)
+                    invoice_line_id.write({'price_unit':sale_line[0].price_unit, 'discount': sale_line[0].discount, 'invoice_line_tax_ids': [(6,0,tax_ids)]})
+                    account_invoice_obj.compute_taxes()
                 else:
                     flag = 1
             if flag == 1:
                 self.invoice_line_non_kit()
+
+            sale_order.x_studio_last_invoice_date = datetime.date.today()
+            sale_order.x_studio_invoiced = True
+            sale_order.x_studio_invoice_amount = account_invoice_obj.amount_total
         return True
 
     @api.multi
