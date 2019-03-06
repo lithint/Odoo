@@ -80,20 +80,20 @@ class StockPicking(models.Model):
     @api.multi
     def action_done(self):
         if self.sale_id.carrier_id:
-            self.sale_id._remove_delivery_line()
-            self.sale_id.delivery_rating_success = False
-            res = self.sale_id.carrier_id.rate_shipment(self.sale_id)
-            if res['success']:
-                self.sale_id.delivery_rating_success = True
-                self.sale_id.delivery_price = res['price']
-                self.carrier_price = res['price']
-                self.sale_id.delivery_message = res['warning_message']
-            else:
+            if not self.env['sale.order.line'].search_count([('order_id', 'in', self.ids), ('is_delivery', '=', True)]):
                 self.sale_id.delivery_rating_success = False
-                self.sale_id.delivery_price = 0.0
-                self.sale_id.delivery_message = res['error_message']
-            self._add_delivery_cost_to_so()
-            self.sale_id.invoice_shipping_on_delivery = False
+                res = self.sale_id.carrier_id.rate_shipment(self.sale_id)
+                if res['success']:
+                    self.sale_id.delivery_rating_success = True
+                    self.sale_id.delivery_price = res['price']
+                    self.carrier_price = res['price']
+                    self.sale_id.delivery_message = res['warning_message']
+                else:
+                    self.sale_id.delivery_rating_success = False
+                    self.sale_id.delivery_price = 0.0
+                    self.sale_id.delivery_message = res['error_message']
+                self._add_delivery_cost_to_so()
+                self.sale_id.invoice_shipping_on_delivery = False
         res = super(StockPicking, self).action_done()
         account_invoice_obj = self.env['account.invoice'].search([('sale_id','=',self.origin)],limit=1)
         sale_order  =  self.env['sale.order'].search([('name', '=',self.origin )])
