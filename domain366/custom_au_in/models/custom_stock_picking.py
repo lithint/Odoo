@@ -135,3 +135,29 @@ class StockPicking(models.Model):
     def do_print_picking_2(self):
         self.write({'x_studio_delivery_printed': True})
         return self.env.ref('stock.action_report_delivery').report_action(self)
+
+class AccountInvoiceLine(models.Model):
+    _inherit = "account.invoice.line"
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        import logging
+        log = logging.getLogger(__name__)
+        import traceback; erf = traceback.format_stack()
+        log.info(' '.join(erf))
+        log.info(str(vals_list))
+
+        return super(AccountInvoiceLine, self).create(vals_list)
+
+    @api.multi
+    def write(self, vals):
+        import logging
+        log = logging.getLogger(__name__)
+        import traceback; erf = traceback.format_stack()
+        log.info(' '.join(erf))
+        log.info(str(vals))
+
+        rslt = super(AccountInvoiceLine, self).write(vals)
+
+        return rslt
+    
