@@ -102,6 +102,7 @@ class StockPicking(models.Model):
         if sale_order:
             account = self.get_account_properties()
             account_invoice_obj.write({'user_id': sale_order.user_id.id})
+            account_invoice_obj.write({'name': sale_order.client_order_ref})
             for inv_lines in account_invoice_obj.invoice_line_ids:
                 inv_lines.unlink()
             for sale_line in sale_order.order_line:
