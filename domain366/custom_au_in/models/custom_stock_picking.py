@@ -104,7 +104,7 @@ class StockPicking(models.Model):
             account_invoice_obj.write({'user_id': sale_order.user_id.id})
             account_invoice_obj.write({'name': sale_order.client_order_ref})
             #account_invoice_obj.write({'date_invoice': datetime.date.today()})
-            today_date = Date.context_today(self)
+            today_date = field.Date.context_today(self)
             account_invoice_obj.write({'date_invoice': today_date})
             for inv_lines in account_invoice_obj.invoice_line_ids:
                 inv_lines.unlink()
