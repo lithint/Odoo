@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="report_custom_picking_order" name="custom_pick">
-        <t t-call="web.external_layout">
-            <t t-call="web.html_container">
-                <t t-foreach="docs" t-as="doc">
-                    <div class="page">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+               <t t-call="web.external_layout">
+                 <div class="page">
                         <table style="border-width:1px 1; border-style:solid;" width="100%">
                         <thead>
                             <tr style="background-color:#D3D3D3;" width="100%">
