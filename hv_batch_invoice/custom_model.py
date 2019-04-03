@@ -119,7 +119,7 @@ class hv_batch_invoice_account_register_payment(models.TransientModel):
 
     @api.multi
     def create_payments(self):
-        if self.payment_difference_rest != 0 and self.payment_difference_handling == 'reconcile':
+        if self._context.get('batch_invoice_id') and self.payment_difference_rest != 0 and self.payment_difference_handling == 'reconcile':
             raise UserError(_('Payment rest value must be 0.'))
         return super(hv_batch_invoice_account_register_payment, self).create_payments()
 
@@ -194,6 +194,20 @@ class hv_batch_invoice_account_payment(models.Model):
 
         return move    
 
+class hv_account_invoice(models.Model):
+    _inherit = "account.invoice"
+    
+    def _search_id(self, value):
+        if value:
+            query = """
+                SELECT id
+                    FROM account_invoice 
+                    where """ + value
+            self._cr.execute(query)
+            res = self._cr.fetchall()
+        if not res:
+            return []
+        return [r[0] for r in res]
 
 class hv_batch_invoice(models.Model):
     _name = 'batch.invoice'
@@ -298,12 +312,18 @@ class InvoiceImport(models.TransientModel):
             list(row) for row in pycompat.imap(mapper, rows)
             if any(row)
         ]  
-        number_index = [index for index, data in enumerate(fields) if data.lower()=='number']
+        number_index = [index for index, data in enumerate(fields) if data.lower()=='tran no.']
         if not number_index:
-            raise UserError(_("Invoice import need an 'Number' field and data in csv file."))
+            raise UserError(_("Invoice import need an 'Tran No.' field and data in csv file."))
                 
         batch = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
-        invoice_ids = self.env['account.invoice'].search([('number', 'in', [data[number_index[0]] for data in datas]),('state', '=', 'open'),('partner_id', '=', batch.customer_id.id),('type', 'in', ['out_invoice', 'out_refund'])]).ids
+        number=""
+        for data in datas:
+            numbers = number + "'" + data[number_index[0]] + "',"
+        if len(numbers)==0:
+            raise UserError(_("No data found."))
+        numbers = numbers[0:len(numbers)-1]
+        invoice_ids = self.env['account.invoice']._search_id("right(number,5) in (" + numbers + ") and state = 'open' and type in ('out_invoice','out_refund') and partner_id = " + str(batch.customer_id.id))
         if invoice_ids:
             batch.write({'invoice_ids' : [(4,  invoice_id) for invoice_id in invoice_ids]})
         self.total_rows = len(datas)
