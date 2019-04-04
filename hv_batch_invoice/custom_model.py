@@ -197,14 +197,11 @@ class hv_batch_invoice_account_payment(models.Model):
 class hv_account_invoice(models.Model):
     _inherit = "account.invoice"
     
-    def _search_id(self, value):
-        if value:
-            query = """
-                SELECT id
-                    FROM account_invoice 
-                    where """ + value
-            self._cr.execute(query)
-            res = self._cr.fetchall()
+    def _search_id(self, query):
+        if not query:
+            return []
+        self._cr.execute(query)
+        res = self._cr.fetchall()
         if not res:
             return []
         return [r[0] for r in res]
@@ -221,7 +218,8 @@ class hv_batch_invoice(models.Model):
 
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
-        res = {'domain': {'invoice_ids': [('partner_id', '=', self.customer_id.id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
+        # res = {'domain': {'invoice_ids': [('partner_id', '=', self.customer_id.id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
+        res = {}
         if self.customer_id != self._origin.customer_id and self.invoice_ids:
             self.invoice_ids = [(6, 0, [])]
             warning = {
@@ -316,16 +314,25 @@ class InvoiceImport(models.TransientModel):
         if not number_index:
             raise UserError(_("Invoice import need an 'Tran No.' field and data in csv file."))
                 
-        batch = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
-        number=""
+        batch_invoice = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
+        numbers=""
         for data in datas:
-            numbers = number + "'" + data[number_index[0]] + "',"
+            numbers = numbers + "'" + data[number_index[0]] + "',"
         if len(numbers)==0:
             raise UserError(_("No data found."))
         numbers = numbers[0:len(numbers)-1]
-        invoice_ids = self.env['account.invoice']._search_id("right(number,5) in (" + numbers + ") and state = 'open' and type in ('out_invoice','out_refund') and partner_id = " + str(batch.customer_id.id))
+        query = """
+                SELECT ac.id
+                    FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
+                    where right(ac.number,5) in (%s) 
+                        and ac.state = 'open' 
+                        and ac.type in ('out_invoice','out_refund') 
+                        and (pa.id = %s or pa.parent_id = %s)
+                        """ % (numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
+        invoice_ids = self.env['account.invoice']._search_id(query)
         if invoice_ids:
-            batch.write({'invoice_ids' : [(4,  invoice_id) for invoice_id in invoice_ids]})
+            batch_invoice.write({'invoice_ids' : [(4,  invoice_id) for invoice_id in invoice_ids]})
+
         self.total_rows = len(datas)
         self.import_rows = len(invoice_ids)
         return {
