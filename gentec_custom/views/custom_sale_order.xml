@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="gentec_view_order_form">
+            <field name="name">Gentec Sale Order</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+                <data>
+                    <xpath expr="//tree/field[@name='price_subtotal']" position="after">
+                       <field name="price_tax" widget="monetary"/>
+                    </xpath>
+                </data>
+            </field>
+        </record>
+</odoo>
