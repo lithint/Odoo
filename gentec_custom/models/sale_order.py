@@ -12,3 +12,7 @@ class SaleOrder(models.Model):
                                      ('Swap Product', 'Swap Product'),
                                      ('Kit items', 'Kit items'),
                                      ('Not Applicable', 'Not Applicable'),], string='FOC', default='Not Applicable')
+    warehouse_id = fields.Many2one(
+        'stock.warehouse', string='Warehouse',
+        required=True, readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
+        default=False)
