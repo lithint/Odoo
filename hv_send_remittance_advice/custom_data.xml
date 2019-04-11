@@ -38,6 +38,7 @@
                         <field name="communication"/>
                         <field name="amount" sum="Total"/>
                         <field name="email_send" readonly="1"/>
+                        <field name="payment_reference" readonly="1"/>
                         <field name="currency_id" invisible="1"/>
                     </tree>
                     <form string="Payments">
@@ -61,6 +62,7 @@
                                 <field name="email_vendor"/>
                                 <field name="email_cc"/>
                                 <field name="email_send" readonly="1"/>
+                                <field name="payment_reference" readonly="1"/>
                                 <field name="communication" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
                                 <field name="partner_bank_account_id" attrs="{'invisible': [('show_partner_bank_account', '!=', True)], 'required': [('show_partner_bank_account', '=', True)]}" context="{'default_partner_id': partner_id}"/>
                                 <field name="show_partner_bank_account" invisible="1"/>
@@ -166,13 +168,25 @@
 					<img src="https://ci5.googleusercontent.com/proxy/kKca2Yb9ZHUXGonBTsBz5H9t4PDZe0WUXaOf7LU04W2YT3nTw5eINKulnwXQjtiV4cqtZyPZMYFFVOa6abLz6-EPwVzBn2Slh3jdEpOUPAZ3I0SqIg5Lvc9lp4m05tMx84LsnMICd7g88jiUTG8=s0-d-e1-ft#https://system.na2.netsuite.com/core/media/media.nl?id=719&amp;c=4514937&amp;h=ff4ba428522156afb694" style="float:left;margin:7px" class="CToWUd"/>
 				</td>
 				<td style="padding:0px;font-size:10pt">
-					<span class="m_-4095914086938366884nameandaddress">Gentec Australia Pty Ltd<br/>
-						<span class="m_-4095914086938366884nameandaddress">Unit 6/ 20-28 Ricketty Street<br/>Mascot NSW 2020<br/>Australia
-                        </span>
+					<span class="m_-4095914086938366884nameandaddress">
+                    ${user.company_id.name}<br/>
+                    % if user.company_id.street: 
+                        ${user.company_id.street}<br/>
+                    % endif
+                    % if user.company_id.street2: 
+                        ${user.company_id.street2}<br/>
+                    % endif
+                    % if user.company_id.city: 
+                        ${user.company_id.city} 
+                    % endif
+                    % if user.company_id.state_id: 
+                        ${"{} {}".format(user.company_id.state_id.name, user.company_id.zip)}<br/>
+                        ${user.company_id.country_id.name}<br/>
+                    % endif
 					</span>
 				</td>
 				<td align="right" style="padding:0px;font-size:10pt">
-					<span class="m_-4095914086938366884title" style="font-size:28pt">Payment Voucher</span>
+					<span class="m_-4095914086938366884title" style="font-size:26pt">Payment Voucher</span>
 				</td>
 			</tr>
 		</tbody>
@@ -192,7 +206,22 @@
 				<td class="m_-4095914086938366884totalboxtop" style="padding:4px 6px;font-weight:bold;color:rgb(12,84,123);font-size:12pt;background-color:rgb(207,221,231)">AMOUNT</td>
 			</tr>
 			<tr>
-				<td style="padding:4px 6px;vertical-align:top"></td>
+				<td style="padding:4px 6px;vertical-align:top">
+                    ${object.partner_id.name}<br/>
+                    % if object.partner_id.street: 
+                        ${object.partner_id.street} Street<br/>
+                    % endif
+                    % if object.partner_id.street2: 
+                        ${object.partner_id.street2}<br/>
+                    % endif
+                    % if object.partner_id.city: 
+                        ${object.partner_id.city} 
+                    % endif
+                    % if object.partner_id.state_id: 
+                        ${"{} ({}) ".format(object.partner_id.state_id.name, object.partner_id.country_id.code)}<br/>
+                        ${object.partner_id.country_id.name}<br/>
+                    % endif
+                </td>
 				<td style="padding:4px 6px;vertical-align:top">Payment will be credited to your bank account after 2 - 3 banking days.</td>
 				<td class="m_-4095914086938366884totalboxmid" style="padding:3px 6px;font-size:28pt;background-color:rgb(207,221,231);text-align:right">${format_amount(object.total, object.currency_id)}</td>
                 
