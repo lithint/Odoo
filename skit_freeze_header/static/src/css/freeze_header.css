@@ -1,0 +1,23 @@
+.o_list_view thead > tr > th{
+	border-left: 1px solid #dfdfdf;
+    top: 0px !important;
+    position: sticky !important;
+    position: -webkit-sticky !important; /* Safari */
+    background-color: #eee;
+    z-index: 1 !important;
+}
+
+.table-responsive{
+	display: table;	
+}
+
+.o_list_record_selector{
+	color: #4c4c4c !important;
+    background-color: #eee !important;
+}
+
+.o_form_view .o_field_widget.o_field_one2many,
+.o_form_view .o_field_widget.o_field_many2many{
+	height: 360px;
+    overflow: scroll;
+}
