@@ -72,10 +72,11 @@ class hv_account_register_payment(models.TransientModel):
 class hv_account_payment(models.Model):
     _inherit = "account.payment"
 
-    email_send = fields.Boolean(string='Email Send', default=False, readonly=True)
+    email_send = fields.Integer(string='Send Times', default=0, readonly=True)
     email_vendor  = fields.Char(string='Email Address')
     email_cc  = fields.Char(string='CC')
     email_bcc  = fields.Char(string='BCC')
+    payment_reference = fields.Char(string='Payment Reference')
 
     # @api.model
     # def create(self, vals):
@@ -110,11 +111,30 @@ class hv_batch_email_send(models.TransientModel):
 class hv_account_batch_payment(models.Model):
     _inherit = 'account.batch.payment'
 
+    @api.model
+    def create(self, vals):
+        rec = super(hv_account_batch_payment, self).create(vals)
+        if rec.payment_ids:
+            i = 1
+            for pm in rec.payment_ids:
+                pm.write({'payment_reference' : 'BO' + rec.name[-10:] + '/' + str(i)})
+                i += 1        
+        return rec
+
+    @api.multi
+    def write(self, vals):
+        rec = super(hv_account_batch_payment, self).write(vals)
+        if 'payment_ids' in vals:
+            if self.payment_ids:
+                i = 1
+                for pm in self.payment_ids:
+                    pm.write({'payment_reference' : 'BO' + self.name[-10:]+ '/' + str(i)})
+                    i += 1        
+        return rec
+
     def action_send_remittance_advice(self):
         vendor = {}
         for item in self.payment_ids:
-            if item.email_send:
-                continue
             if not vendor.get(item.partner_id.id):
                 vendor.update({item.partner_id.id:{
                     'partner_id': item.partner_id.id,
@@ -162,7 +182,7 @@ class hv_account_batch_payment(models.Model):
             wizard_mail.onchange_template_id_wrapper()
             wizard_mail.send_mail()
             for pid in batch.payment_ids:
-                pid.email_send = True
+                pid.email_send += 1
         alert = self.env['warning.hv.send.remit.advice'].create({})
         alert.name='Send remittance advice completed.'
         alert.title = 'SEND REMITTANCE ADVICE'
