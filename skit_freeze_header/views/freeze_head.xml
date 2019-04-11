@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>       
+        <template id="pos_pay_later" inherit_id="web.assets_backend">
+          <xpath expr="." position="inside">
+    		   <link rel="stylesheet" href="/skit_freeze_header/static/src/css/freeze_header.css"/>
+    		   <script type="text/javascript" src="/skit_freeze_header/static/src/js/header.js"></script>
+         </xpath>
+        </template>
+    </data>
+</odoo>
