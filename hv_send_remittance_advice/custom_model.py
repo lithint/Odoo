@@ -78,10 +78,10 @@ class hv_account_payment(models.Model):
     email_bcc  = fields.Char(string='BCC')
     payment_reference = fields.Char(string='Payment Reference')
 
-    # @api.model
-    # def create(self, vals):
-    #     vals.update({'email_vendor': self.env['res.partner'].browse(vals.get('partner_id')).email})
-    #     return super(hv_account_payment, self).create(vals)
+    @api.model
+    def create(self, vals):
+        vals.update({'email_vendor': self.env['res.partner'].browse(vals.get('partner_id')).email})
+        return super(hv_account_payment, self).create(vals)
 
 class hv_batch_email_send_abs(models.AbstractModel):
     _name = "batch.payment.email.send.abstract"
