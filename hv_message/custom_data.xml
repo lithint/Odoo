@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+   <record id="warning" model="ir.ui.view">
+            <field name="model">havi.message</field>
+            <field name="arch" type="xml">
+                <form>
+                    <div class="oe_grey">
+                        <field name="name" readonly="1"/>
+                    </div>
+                    <footer>
+                        <!-- <button string=“Continue”
+                            class="oe_highlight"
+                            type="object"
+                            name="action_warning"/>
+                        or -->
+                        <button name="cancel" string="OK" special="cancel" class="oe_link"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+</odoo>

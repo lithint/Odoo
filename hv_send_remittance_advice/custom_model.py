@@ -24,25 +24,58 @@ OPTIONS = {
 class hv_account_abstract_payment(models.AbstractModel):
     _inherit = "account.abstract.payment"  
 
+class AccountBatchPayment(models.Model):
+    _inherit = "account.batch.payment"
+
+    payment_ids = fields.One2many('account.payment', 'batch_payment_id', string="Payments", required=False,  readonly=True, states={'draft': [('readonly', False)]})
+    
+    @api.constrains('batch_type', 'journal_id', 'payment_ids')
+    def _check_payments_constrains(self):
+        for record in self:
+            if record.payment_ids:
+                all_companies = set(record.payment_ids.mapped('company_id'))
+                if len(all_companies) > 1:
+                    raise ValidationError(_("All payments in the batch must belong to the same company."))
+                all_journals = set(record.payment_ids.mapped('journal_id'))
+                if len(all_journals) > 1 or record.payment_ids[0].journal_id != record.journal_id:
+                    raise ValidationError(_("The journal of the batch payment and of the payments it contains must be the same."))
+                all_types = set(record.payment_ids.mapped('payment_type'))
+                if len(all_types) > 1:
+                    raise ValidationError(_("All payments in the batch must share the same type."))
+                if all_types and record.batch_type not in all_types:
+                    raise ValidationError(_("The batch must have the same type as the payments it contains."))
+                all_payment_methods = set(record.payment_ids.mapped('payment_method_id'))
+                if len(all_payment_methods) > 1:
+                    raise ValidationError(_("All payments in the batch must share the same payment method."))
+                if all_payment_methods and record.payment_method_id not in all_payment_methods:
+                    raise ValidationError(_("The batch must have the same payment method as the payments it contains."))
+
 class hv_account_register_payment(models.TransientModel):
     _inherit = "account.register.payments"
 
     @api.multi
+    def _prepare_payment_vals(self, invoices):
+        values = super(hv_account_register_payment, self)._prepare_payment_vals(invoices)
+        if self._context.get('batch_payment_id'):
+            values.update({
+                'batch_payment_id' : self._context.get('batch_payment_id'),
+            })
+        return values
+
+    @api.multi
     def create_payments(self):
-        Payment = self.env['account.payment']
-        payments = Payment
-        for payment_vals in self.get_payments_vals():
-            payments += Payment.create(payment_vals)
-        payments.post()
         if self.payment_method_id.code == 'aba_ct':
             batch_payment = self.env['account.batch.payment'].create({
                 'state' : 'draft',
                 'batch_type' : 'outbound',
                 'journal_id' : self.journal_id.id,
                 'payment_method_id' : self.payment_method_id.id,
-                'payment_ids' : [(6, 0, payments.ids)],
             })
+            self = self.with_context(batch_payment_id=batch_payment.id)
 
+        action_vals = super(hv_account_register_payment, self).create_payments()
+        
+        if self.payment_method_id.code == 'aba_ct':
             action_vals = {
             'name': _('Batch Payments'),
             'view_type': 'form',
@@ -53,20 +86,7 @@ class hv_account_register_payment(models.TransientModel):
             'type': 'ir.actions.act_window',
             'target': 'current',
             }
-            return action_vals
-
-        action_vals = {
-            'name': _('Payments'),
-            'domain': [('id', 'in', payments.ids), ('state', '=', 'posted')],
-            'view_type': 'form',
-            'res_model': 'account.payment',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-        }
-        if len(payments) == 1:
-            action_vals.update({'res_id': payments[0].id, 'view_mode': 'form'})
-        else:
-            action_vals['view_mode'] = 'tree,form'
+        
         return action_vals
 
 class hv_account_payment(models.Model):

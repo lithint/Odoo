@@ -52,7 +52,7 @@ OPTIONS = {
 class hv_batch_invoice_product(models.Model):
     _inherit = 'res.partner'
 
-    rebate = fields.Integer(string='Rebate %', default=0)
+    rebate = fields.Float(string='Rebate %', digits= (3,1), default=0.0)
 
     @api.onchange('rebate')
     def _rebate_onchange(self):
@@ -81,6 +81,7 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
     
     writeoff_account_ids = fields.One2many('batch.account.writeoff','payment_id')
     payment_difference_rest = fields.Float(string='Payment rest', readonly=True, compute='_compute_rest')
+    batch_invoice_id = fields.Many2one('batch.invoice')
     
     @api.one
     @api.depends('writeoff_account_ids', 'payment_difference')
@@ -93,7 +94,7 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
     def _onchange_currency(self):
         res = super(hv_batch_invoice_account_abstract_payment, self)._onchange_currency()
         if self._context.get('batch_invoice_id') and self.partner_id.rebate:
-            self.amount = abs(self._compute_payment_amount() - self._compute_payment_amount() * self.partner_id.rebate / 100)
+            self.amount -= self.currency_id.round(self.amount * self.partner_id.rebate / 100)
         return res
 
     @api.onchange('writeoff_account_ids', 'payment_difference')
@@ -108,20 +109,31 @@ class hv_batch_invoice_account_register_payment(models.TransientModel):
     def _onchange_journal(self):
         res = super(hv_batch_invoice_account_register_payment, self)._onchange_journal()
         if self._context.get('batch_invoice_id')and self.partner_id.rebate:
-            self.amount = abs(self._compute_payment_amount() - self._compute_payment_amount() * self.partner_id.rebate / 100)
+            self.amount -= self.currency_id.round(self.amount * self.partner_id.rebate / 100)
         return res
 
     @api.multi
     def _prepare_payment_vals(self, invoices):
         values = super(hv_batch_invoice_account_register_payment, self)._prepare_payment_vals(invoices)
-        values.update({'writeoff_account_ids' : [(6, 0, self.writeoff_account_ids.ids)]})
+        if self._context.get('batch_invoice_id'):
+            values.update({
+                'writeoff_account_ids' : [(6, 0, self.writeoff_account_ids.ids)],
+                'batch_invoice_id' : self._context.get('batch_invoice_id')
+            })
         return values
 
     @api.multi
     def create_payments(self):
         if self._context.get('batch_invoice_id') and self.payment_difference_rest != 0 and self.payment_difference_handling == 'reconcile':
             raise UserError(_('Payment rest value must be 0.'))
-        return super(hv_batch_invoice_account_register_payment, self).create_payments()
+        action_vals = super(hv_batch_invoice_account_register_payment, self).create_payments()
+       
+        if self._context.get('batch_invoice_id'):
+            batch_invoice = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
+            batch_invoice.write({'state': 'run'})
+
+        return action_vals
+
 
 class hv_batch_invoice_account_payment(models.Model):
     _inherit = "account.payment"
@@ -204,17 +216,21 @@ class hv_account_invoice(models.Model):
         res = self._cr.fetchall()
         if not res:
             return []
-        return [r[0] for r in res]
+        return [[r[0], r[1]] for r in res]
 
 class hv_batch_invoice(models.Model):
     _name = 'batch.invoice'
 
     name = fields.Char(string='Batch Name', required=True)
-    customer_id = fields.Many2one('res.partner', string='Customer', help="Filter open invoices by selected customer.")
+    customer_id = fields.Many2one('res.partner', string='Customer', help="Filter open invoices by selected customer.", domain=[('customer', '=', True)])
     invoice_ids = fields.Many2many('account.invoice','batch_account_invoice_rel', 'batch_id', 'invoice_id', string='Add Invoices to Batch')
-    state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default='draft', copy=False, string="Status")
-    total = fields.Float(string='Total Amount', readonly=True, compute='_compute_total')
-    rebate = fields.Float(string='Rebate Amount', readonly=True, compute='_compute_total')
+    state = fields.Selection([('draft', 'Draft'), ('open', 'Open'), ('run', 'Registered')], readonly=True, default='draft', copy=False, string="Status")
+    total = fields.Float(string='Total Amount', readonly=True, compute='_compute_total', store=True)
+    rebate = fields.Float(string='Rebate Amount', readonly=True, compute='_compute_total', store=True)
+    rebatepercent = fields.Float(string='Rebate %', digits= (3,1), readonly=True, compute='_compute_total', store=True)
+
+    import_ids = fields.One2many('batch.invoice.import.result', 'batch_id')
+    payment_ids = fields.One2many('account.abstract.payment', 'batch_invoice_id')
 
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
@@ -232,12 +248,20 @@ class hv_batch_invoice(models.Model):
     @api.one
     @api.depends('invoice_ids', 'customer_id')
     def _compute_total(self):
-        self.total = 0.0
-        self.rebate = 0.0
-        if self.invoice_ids:
-            self.total += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.residual_signed for i in self.invoice_ids])
-            # self.rebate += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.amount_total_signed for i in self.invoice_ids])
-        self.rebate = round(self.total * self.customer_id.rebate / 100, 2)
+        if self.state == 'draft':
+            self.rebatepercent = self.customer_id.rebate
+            self.total = 0.0
+            self.rebate = 0.0
+            if self.invoice_ids:
+                self.total = sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.residual_signed for i in self.invoice_ids])
+                # self.rebate += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.amount_total_signed for i in self.invoice_ids])
+                self.rebate = self.invoice_ids[0].currency_id.round(self.total * self.customer_id.rebate / 100)                
+
+    def action_confirm(self):
+        return self.write({'state': 'open'})
+
+    def action_cancel(self):
+        return self.write({'state': 'draft'})
 
     def action_register_payment_hv(self):
         if not self.invoice_ids:
@@ -269,18 +293,34 @@ class hv_batch_invoice(models.Model):
         'res_model': 'batch.invoice.import',
         'view_id': self.env.ref('hv_batch_invoice.account_invoice_import_view').id,
         'target': 'new',
-        'nodestroy': True,
         'context': {'batch_invoice_id': self.id},
         }
 
+class InvoiceImportResultLine(models.Model):
+    _name = "batch.invoice.import.result.line"
+    
+    tranno = fields.Char(string='Number Import', required=True)
+    state = fields.Selection([('imported', 'Imported'), ('no', 'Not Imported')], default='imported', copy=False, string="Status")
+    import_id = fields.Many2one('batch.invoice.import.result')
+
+class InvoiceImportResult(models.Model):
+    _name = "batch.invoice.import.result"
+
+    batch_id = fields.Many2one('batch.invoice')
+    importreuslt_ids = fields.One2many('batch.invoice.import.result.line', 'import_id')
+    
+    filename = fields.Char(string='File Name')
+    total_rows = fields.Integer(string='Total row(s)', readonly=True)
+    import_rows = fields.Integer(string='Imported row(s)' ,readonly=True)
+   
+    
 class InvoiceImport(models.TransientModel):
     _name = "batch.invoice.import"
     _description = 'Import Invoices'
 
     data_file = fields.Binary(string='Invoice Statement File', required=True, help='Get your invoice statements in electronic format from your invoice and select them here.')
-    filename = fields.Char()
-    total_rows = fields.Integer(readonly=True)
-    import_rows = fields.Integer(readonly=True)
+    filename = fields.Char(string='File Name')
+    
 
     def _check_csv(self, filename):
         return filename and filename.lower().strip().endswith('.csv')
@@ -321,30 +361,61 @@ class InvoiceImport(models.TransientModel):
         if len(numbers)==0:
             raise UserError(_("No data found."))
         numbers = numbers[0:len(numbers)-1]
-        query = """
-                SELECT ac.id
-                    FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
-                    where right(ac.number,5) in (%s) 
-                        and ac.state = 'open' 
-                        and ac.type in ('out_invoice','out_refund') 
-                        and (pa.id = %s or pa.parent_id = %s)
-                        """ % (numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
+        if 'x_studio_jcurve_invoice' in self.env['account.invoice']._fields:
+            query = """
+                    SELECT ac.id, right(ac.number,5) number
+                        FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
+                        where (right(ac.number,5) in (%s) or right(ac.x_studio_jcurve_invoice,5) in (%s))
+                            and ac.state = 'open' 
+                            and ac.type in ('out_invoice','out_refund') 
+                            and (pa.id = %s or pa.parent_id = %s)
+                            """ % (numbers, numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
+        else:
+            query = """
+                    SELECT ac.id, right(ac.number,5) number
+                        FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
+                        where right(ac.number,5) in (%s) 
+                            and ac.state = 'open' 
+                            and ac.type in ('out_invoice','out_refund') 
+                            and (pa.id = %s or pa.parent_id = %s)
+                            """ % (numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
         invoice_ids = self.env['account.invoice']._search_id(query)
         if invoice_ids:
-            batch_invoice.write({'invoice_ids' : [(4,  invoice_id) for invoice_id in invoice_ids]})
+            batch_invoice.write({'invoice_ids' : [(4,  invoice_id[0]) for invoice_id in invoice_ids]})
 
-        self.total_rows = len(datas)
-        self.import_rows = len(invoice_ids)
+        resutl = self.env['batch.invoice.import.result'].create({
+            'batch_id': batch_invoice.id,
+            'filename': self.filename,
+            'total_rows': len(datas),
+            'import_rows': len(invoice_ids),
+        })
+        for data in datas:
+            f = False
+            for match in invoice_ids:
+                if data[number_index[0]] == match[1]:
+                    # self.env['batch.invoice.import.result.line'].create({
+                    # 'import_id': resutl.id,
+                    # 'tranno': data[number_index[0]] ,
+                    # 'state': 'imported' ,
+                    # })
+                    f = True
+                    break
+            if not f:
+                self.env['batch.invoice.import.result.line'].create({
+                'import_id': resutl.id,
+                'tranno': data[number_index[0]] ,
+                'state': 'no',
+                })
+                
         return {
         'name': 'Import Result',
         'type': 'ir.actions.act_window',
         'view_type': 'form',
         'view_mode': 'form',
-        'res_model': 'batch.invoice.import',
+        'res_model': 'batch.invoice.import.result',
         'view_id': self.env.ref('hv_batch_invoice.action_account_invoice_change_customer_confirm').id,
         'res_id': self.id,
         'target': 'new',
-        'nodestroy': True,
         'context': {'rows': len(invoice_ids)}
         }
 

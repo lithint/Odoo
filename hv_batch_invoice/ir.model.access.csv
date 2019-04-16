@@ -1,7 +1,9 @@
 id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
-access_batch_invoice,batch_invoice,model_batch_invoice,account.group_account_manager,1,1,1,1
-access_batch_account_writeoff,batch_account_writeoff,model_batch_account_writeoff,account.group_account_manager,1,1,1,1
-access_account_abstract_payment,account_abstract_payment,model_account_abstract_payment,account.group_account_manager,1,1,1,1
+access_batch_invoice,batch_invoice,model_batch_invoice,account.group_account_user,1,1,1,1
+access_batch_account_writeoff,batch_account_writeoff,model_batch_account_writeoff,account.group_account_user,1,1,1,1
+access_account_abstract_payment,account_abstract_payment,model_account_abstract_payment,account.group_account_user,1,1,1,1
+access_batch_invoice_import_result_line,batch_invoice_import_result_line,model_batch_invoice_import_result_line,account.group_account_user,1,1,1,1
+access_batch_invoice_import_result,batch_invoice_import_result,model_batch_invoice_import_result,account.group_account_user,1,1,1,1
 
 
 
