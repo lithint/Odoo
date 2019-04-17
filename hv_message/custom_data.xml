@@ -1,21 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
    <record id="warning" model="ir.ui.view">
-            <field name="model">havi.message</field>
-            <field name="arch" type="xml">
-                <form>
-                    <div class="oe_grey">
-                        <field name="name" readonly="1"/>
-                    </div>
-                    <footer>
-                        <!-- <button string=“Continue”
-                            class="oe_highlight"
-                            type="object"
-                            name="action_warning"/>
-                        or -->
-                        <button name="cancel" string="OK" special="cancel" class="oe_link"/>
-                    </footer>
-                </form>
-            </field>
-        </record>
+        <field name="model">havi.message</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="oe_grey">
+                    <field name="name" readonly="1"/>
+                </div>
+                <footer>
+                    <!-- <button string=“Continue”
+                        class="oe_highlight"
+                        type="object"
+                        name="action_warning"/>
+                    or -->
+                    <button name="cancel" string="OK" special="cancel" class="btn-primary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="confirm" model="ir.ui.view">
+        <field name="model">havi.message</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="oe_grey">
+                    <field name="name" readonly="1"/>
+                </div>
+                <footer>
+                    <button name="action_confirm_yes" string="Yes" type="object" class="btn-primary" />
+                    <button name="cancel" string="No" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
 </odoo>
