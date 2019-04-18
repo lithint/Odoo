@@ -33,6 +33,10 @@ FILE_TYPE_DICT = {
     'application/vnd.oasis.opendocument.spreadsheet': ('ods', odf_ods_reader, 'odfpy')
 }
 
+OPTIONS = {
+    'advanced': False, 
+    'bank_stmt_import': True, 'date_format': '', 'datetime_format': '', 'encoding': 'ascii', 'fields': [], 'float_decimal_separator': '.', 'float_thousand_separator': ',', 'headers': True, 'keep_matches': False, 'name_create_enabled_fields': {'currency_id': False, 'partner_id': False}, 'quoting': '"', 'separator': ','}
+
 MAP_INVOICE_TYPE_PARTNER_TYPE = {
     'out_invoice': 'customer',
     'out_refund': 'customer',
@@ -45,9 +49,7 @@ MAP_INVOICE_TYPE_PAYMENT_SIGN = {
     'in_invoice': -1,
     'out_refund': 1,
 }
-OPTIONS = {
-    'advanced': False, 
-    'bank_stmt_import': True, 'date_format': '', 'datetime_format': '', 'encoding': 'ascii', 'fields': [], 'float_decimal_separator': '.', 'float_thousand_separator': ',', 'headers': True, 'keep_matches': False, 'name_create_enabled_fields': {'currency_id': False, 'partner_id': False}, 'quoting': '"', 'separator': ','}
+
 
 class hv_batch_invoice_product(models.Model):
     _inherit = 'res.partner'
@@ -285,16 +287,7 @@ class hv_batch_invoice(models.Model):
         }
         
     def import_statement(self):
-        return {
-        'name': 'Import Invoices',
-        'type': 'ir.actions.act_window',
-        'view_type': 'form',
-        'view_mode': 'form',
-        'res_model': 'batch.invoice.import',
-        'view_id': self.env.ref('hv_batch_invoice.account_invoice_import_view').id,
-        'target': 'new',
-        'context': {'batch_invoice_id': self.id},
-        }
+        return self.env['havi.message'].with_context(active_model='batch.invoice',batch_invoice_id=self.id).action_import('Select Remittance Advice file to import', 'Import Invoices','hv_batch_invoice')  
 
 class InvoiceImportResultLine(models.Model):
     _name = "batch.invoice.import.result.line"
@@ -312,150 +305,66 @@ class InvoiceImportResult(models.Model):
     filename = fields.Char(string='File Name')
     total_rows = fields.Integer(string='Total row(s)', readonly=True)
     import_rows = fields.Integer(string='Imported row(s)' ,readonly=True)
-   
-    
-class InvoiceImport(models.TransientModel):
-    _name = "batch.invoice.import"
-    _description = 'Import Invoices'
 
-    data_file = fields.Binary(string='Invoice Statement File', required=True, help='Get your invoice statements in electronic format from your invoice and select them here.')
-    filename = fields.Char(string='File Name')
-    
+class hv_message(models.TransientModel):
+    _name = 'havi.message'
+    _inherit = 'havi.message'
 
-    def _check_csv(self, filename):
-        return filename and filename.lower().strip().endswith('.csv')
-
-    @api.multi
     def import_file(self):
-        if not self._check_csv(self.filename):
-            raise UserError(_('Cannot verify your .csv file.'))
-        csv_data = base64.b64decode(self.data_file) or b''
-        if not csv_data:
-            raise UserError(_('No data found in your .csv file.'))
-        rows = self._read_csv(csv_data, OPTIONS)
-        fields = list(itertools.islice(rows, 1))
-        if not fields:
-            raise UserError(_("You must configure any data in csv file."))
-        fields = fields[0]
-        indices = [index for index, field in enumerate(fields) if field]
-        if not indices:
-            raise UserError(_("You must configure any field in csv file."))
-        # If only one index, itemgetter will return an atom rather
-        # than a 1-tuple
-        if len(indices) == 1:
-            mapper = lambda row: [row[indices[0]]]
+        if self.module=='hv_batch_invoice' and self.title=='Import Invoices':
+            fields, datas = self.get_data()
+            number_index = [index for index, data in enumerate(fields) if data.lower()=='tran no.']
+            if not number_index:
+                raise UserError(_("Invoice import need an 'Tran No.' field and data in csv file."))
+                    
+            batch_invoice = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
+            numbers=""
+            for data in datas:
+                numbers = numbers + "'" + data[number_index[0]] + "',"
+            if len(numbers)==0:
+                raise UserError(_("No data found."))
+            numbers = numbers[0:len(numbers)-1]
+            if 'x_studio_jcurve_invoice' in self.env['account.invoice']._fields:
+                query = """
+                        SELECT ac.id, right(ac.number,5) number
+                            FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
+                            where (right(ac.number,5) in (%s) or right(ac.x_studio_jcurve_invoice,5) in (%s))
+                                and ac.state = 'open' 
+                                and ac.type in ('out_invoice','out_refund') 
+                                and (pa.id = %s or pa.parent_id = %s)
+                                """ % (numbers, numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
+            else:
+                query = """
+                        SELECT ac.id, right(ac.number,5) number
+                            FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
+                            where right(ac.number,5) in (%s) 
+                                and ac.state = 'open' 
+                                and ac.type in ('out_invoice','out_refund') 
+                                and (pa.id = %s or pa.parent_id = %s)
+                                """ % (numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
+            invoice_ids = self.env['account.invoice']._search_id(query)
+            if invoice_ids:
+                batch_invoice.write({'invoice_ids' : [(4,  invoice_id[0]) for invoice_id in invoice_ids]})
+
+            resutl = self.env['batch.invoice.import.result'].create({
+                'batch_id': batch_invoice.id,
+                'filename': self.filename,
+                'total_rows': len(datas),
+                'import_rows': len(invoice_ids),
+            })
+            for data in datas:
+                f = False
+                for match in invoice_ids:
+                    if data[number_index[0]] == match[1]:
+                        f = True
+                        break
+                if not f:
+                    self.env['batch.invoice.import.result.line'].create({
+                    'import_id': resutl.id,
+                    'tranno': data[number_index[0]] ,
+                    'state': 'no',
+                    })
+
+            return self.env['havi.message'].action_warning('- Total invoices in file: %s invoice(s).\n\n- Import was successfull with %s row(s).' % (len(datas), len(invoice_ids)),'Import Result') 
         else:
-            mapper = operator.itemgetter(*indices)
-        datas = [
-            list(row) for row in pycompat.imap(mapper, rows)
-            if any(row)
-        ]  
-        number_index = [index for index, data in enumerate(fields) if data.lower()=='tran no.']
-        if not number_index:
-            raise UserError(_("Invoice import need an 'Tran No.' field and data in csv file."))
-                
-        batch_invoice = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
-        numbers=""
-        for data in datas:
-            numbers = numbers + "'" + data[number_index[0]] + "',"
-        if len(numbers)==0:
-            raise UserError(_("No data found."))
-        numbers = numbers[0:len(numbers)-1]
-        if 'x_studio_jcurve_invoice' in self.env['account.invoice']._fields:
-            query = """
-                    SELECT ac.id, right(ac.number,5) number
-                        FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
-                        where (right(ac.number,5) in (%s) or right(ac.x_studio_jcurve_invoice,5) in (%s))
-                            and ac.state = 'open' 
-                            and ac.type in ('out_invoice','out_refund') 
-                            and (pa.id = %s or pa.parent_id = %s)
-                            """ % (numbers, numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
-        else:
-            query = """
-                    SELECT ac.id, right(ac.number,5) number
-                        FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
-                        where right(ac.number,5) in (%s) 
-                            and ac.state = 'open' 
-                            and ac.type in ('out_invoice','out_refund') 
-                            and (pa.id = %s or pa.parent_id = %s)
-                            """ % (numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
-        invoice_ids = self.env['account.invoice']._search_id(query)
-        if invoice_ids:
-            batch_invoice.write({'invoice_ids' : [(4,  invoice_id[0]) for invoice_id in invoice_ids]})
-
-        resutl = self.env['batch.invoice.import.result'].create({
-            'batch_id': batch_invoice.id,
-            'filename': self.filename,
-            'total_rows': len(datas),
-            'import_rows': len(invoice_ids),
-        })
-        for data in datas:
-            f = False
-            for match in invoice_ids:
-                if data[number_index[0]] == match[1]:
-                    # self.env['batch.invoice.import.result.line'].create({
-                    # 'import_id': resutl.id,
-                    # 'tranno': data[number_index[0]] ,
-                    # 'state': 'imported' ,
-                    # })
-                    f = True
-                    break
-            if not f:
-                self.env['batch.invoice.import.result.line'].create({
-                'import_id': resutl.id,
-                'tranno': data[number_index[0]] ,
-                'state': 'no',
-                })
-                
-        return {
-        'name': 'Import Result',
-        'type': 'ir.actions.act_window',
-        'view_type': 'form',
-        'view_mode': 'form',
-        'res_model': 'batch.invoice.import.result',
-        'view_id': self.env.ref('hv_batch_invoice.action_account_invoice_change_customer_confirm').id,
-        'res_id': self.id,
-        'target': 'new',
-        'context': {'rows': len(invoice_ids)}
-        }
-
-    def _read_csv(self, csv_data, options):
-        """ Returns a CSV-parsed iterator of all non-empty lines in the file
-            :throws csv.Error: if an error is detected during CSV parsing
-        """
-        encoding = options.get('encoding')
-        if not encoding:
-            encoding = options['encoding'] = chardet.detect(csv_data)['encoding'].lower()
-
-        if encoding != 'utf-8':
-            csv_data = csv_data.decode(encoding).encode('utf-8')
-
-        separator = options.get('separator')
-        if not separator:
-            # default for unspecified separator so user gets a message about
-            # having to specify it
-            separator = ','
-            for candidate in (',', ';', '\t', ' ', '|', unicodedata.lookup('unit separator')):
-                # pass through the CSV and check if all rows are the same
-                # length & at least 2-wide assume it's the correct one
-                it = pycompat.csv_reader(io.BytesIO(csv_data), quotechar=options['quoting'], delimiter=candidate)
-                w = None
-                for row in it:
-                    width = len(row)
-                    if w is None:
-                        w = width
-                    if width == 1 or width != w:
-                        break # next candidate
-                else: # nobreak
-                    separator = options['separator'] = candidate
-                    break
-
-        csv_iterator = pycompat.csv_reader(
-            io.BytesIO(csv_data),
-            quotechar=options['quoting'],
-            delimiter=separator)
-
-        return (
-            row for row in csv_iterator
-            if any(x for x in row if x.strip())
-        )
+            return super(hv_message, self).import_file()

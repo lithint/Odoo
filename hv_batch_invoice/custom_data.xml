@@ -28,42 +28,6 @@
             </field>
         </record>
 <!--  =========================================================================================== -->
-        <record id="action_account_invoice_change_customer_confirm" model="ir.ui.view">
-            <field name="name">batch.invoice.import.result</field>
-            <field name="model">batch.invoice.import.result</field>
-            <field name="priority">1</field>
-            <field name="arch" type="xml">
-                <form string="Import Result">
-                    <p class="oe_grey">
-                        - Total invoices in file: <field name="total_rows"/> invoice(s).
-                    </p>
-                    <p class="oe_grey">
-                        - Import was successfull with <field name="import_rows"/> row(s).
-                    </p>
-                    <footer>
-                        <button string="OK" class="btn-primary" special="cancel"/>
-                    </footer>
-                </form>
-            </field>
-        </record>
-<!--  =========================================================================================== -->
-        <record id="account_invoice_import_view" model="ir.ui.view">
-            <field name="name">Import.Account.Invoice</field>
-            <field name="model">batch.invoice.import</field>
-            <field name="priority">1</field>
-            <field name="arch" type="xml">
-                <form string="Import Account Invoice">
-                    <h2>Select Remittance Advice file to import</h2>
-                    <field name="data_file" filename="filename" placeholder="Choose a file to import..."/>
-                    <field name="filename" invisible="1"/>
-                    <footer>
-                        <button name="import_file" string="_Import" type="object" class="btn-primary" />
-                        <button string="Cancel" class="btn-secondary" special="cancel"/>
-                    </footer>
-                </form>
-            </field>
-        </record>
-<!--  =========================================================================================== -->
         <record id="view_account_payment_from_invoices" model="ir.ui.view">
             <field name="name">hv.batch.invoice.account.register.payments.wizard</field>
             <field name="model">account.register.payments</field>
