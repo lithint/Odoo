@@ -28,42 +28,6 @@
             </field>
         </record>
 <!--  =========================================================================================== -->
-        <record id="action_account_invoice_change_customer_confirm" model="ir.ui.view">
-            <field name="name">batch.invoice.import.result</field>
-            <field name="model">batch.invoice.import</field>
-            <field name="priority">1</field>
-            <field name="arch" type="xml">
-                <form string="Import Result">
-                    <p class="oe_grey">
-                        - Total invoices in file: <field name="total_rows"/> invoice(s).
-                    </p>
-                    <p class="oe_grey">
-                        - Import was successfull with <field name="import_rows"/> row(s).
-                    </p>
-                    <footer>
-                        <button string="OK" class="btn-primary" special="cancel"/>
-                    </footer>
-                </form>
-            </field>
-        </record>
-<!--  =========================================================================================== -->
-        <record id="account_invoice_import_view" model="ir.ui.view">
-            <field name="name">Import.Account.Invoice</field>
-            <field name="model">batch.invoice.import</field>
-            <field name="priority">1</field>
-            <field name="arch" type="xml">
-                <form string="Import Account Invoice">
-                    <h2>Select Remittance Advice file to import</h2>
-                    <field name="data_file" filename="filename" placeholder="Choose a file to import..."/>
-                    <field name="filename" invisible="1"/>
-                    <footer>
-                        <button name="import_file" string="_Import" type="object" class="btn-primary" />
-                        <button string="Cancel" class="btn-secondary" special="cancel"/>
-                    </footer>
-                </form>
-            </field>
-        </record>
-<!--  =========================================================================================== -->
         <record id="view_account_payment_from_invoices" model="ir.ui.view">
             <field name="name">hv.batch.invoice.account.register.payments.wizard</field>
             <field name="model">account.register.payments</field>
@@ -158,23 +122,57 @@
             <field name="arch" type="xml">
                 <form string="Batch Invoices Form View">
                     <header>
-                        <button name="import_statement" type="object" string="Import" class="btn-primary" />
-                        <button name="action_register_payment_hv" type="object" string="Register Payment" attrs="{'invisible': [('total','=',0)]}" class="btn-primary"/>
+                        <button name="import_statement" type="object" string="Import" class="btn-primary" attrs="{'invisible': [('state','!=', 'draft')]}"/>
+                        <button name="action_confirm" type="object" string="Confirm" class="btn-primary" attrs="{'invisible': [('state','!=', 'draft')]}"/>
+                        <button name="action_register_payment_hv" type="object" string="Register Payment"  class="btn-primary" attrs="{'invisible': [('state','not in', ['open', 'run'])]}"/>
+                        <button name="action_cancel" type="object" string="Cancel" class="btn-secondary" attrs="{'invisible': [('state','!=', 'open')]}"/>
                     </header>
                     <sheet string="Batch Invoice">
                     <group>
-                        <field name="state" invisible="1" />
-                        <field name="name"/>
-                        <field name="customer_id"/>
-                        <field name="total"/>
-                        <field name="rebate"/>
+                        <field name="name" attrs="{'readonly': [('state','!=', 'draft')]}"/>
+                        <field name="customer_id" attrs="{'readonly': [('state','!=', 'draft')]}"/>
+                        <group>
+                            <field name="total"/>
+                            <field name="rebate"/>
+                        </group>
+                        <group>
+                            <field name="rebatepercent"/>
+                            <field name="state"/>
+                        </group>
                     </group>
                     <notebook colspan="4">
                         <page string="Invoice Lines">
                             <field name="invoice_ids" widget="many2many" 
                             domain="['|', ('partner_id', '=', customer_id), ('partner_id.parent_id', '=', customer_id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]"
-                            context="{'default_customer_id': customer_id}"/>
-                            
+                            context="{'default_customer_id': customer_id}"
+                            attrs="{'readonly': [('state','!=', 'draft')]}"/>
+                        </page>
+                        <page string="Import Result">
+                            <field name="import_ids" widget="one2many_list" readonly="1">
+                                <tree string="Result" >
+                                    <field name="filename"/>
+                                    <field name="total_rows"/>
+                                    <field name="import_rows"/>
+                                    <field name="write_date" string="Import date"/>
+                                </tree>
+                                <form string="Import resutl">
+                                    <sheet string="Import Result">
+                                        <group>
+                                            <field name="filename"/>
+                                            <field name="total_rows"/>
+                                            <field name="import_rows"/>
+                                        </group>
+                                        <page string="Not Imported">
+                                            <field name="importreuslt_ids" widget="one2many_list"  readonly="1" >
+                                                <tree>
+                                                    <field name="tranno"/>
+                                                    <field name="state"/>          
+                                                </tree>
+                                            </field>
+                                        </page>
+                                    </sheet>
+                                </form>
+                            </field>
                         </page>
                     </notebook>
                     </sheet>
@@ -190,6 +188,7 @@
                     <field name="name"/>
                     <field name="customer_id"/>
                     <field name="total"/>
+                    <field name="rebate"/>
                     <field name="state"/>
                 </tree>
             </field>

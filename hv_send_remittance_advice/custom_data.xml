@@ -155,7 +155,7 @@
             <field name="name">Payment Posted: Send by email</field>
             <field name="model_id" ref="model_batch_payment_email_send"/>
             <field name="email_from">${object.create_uid.email_formatted |safe}</field>
-            <field name="partner_to">${object.partner_id.id}</field>
+            <!-- <field name="partner_to">${object.partner_id.id}</field> -->
             <field name="email_to">${object.email_vendor}</field>
             <field name="email_cc">${object.email_cc}</field>
             <field name="subject">Payment Notification ${object.name or 'n/a'}</field>
@@ -209,7 +209,7 @@
 				<td style="padding:4px 6px;vertical-align:top">
                     ${object.partner_id.name}<br/>
                     % if object.partner_id.street: 
-                        ${object.partner_id.street} Street<br/>
+                        ${object.partner_id.street}<br/>
                     % endif
                     % if object.partner_id.street2: 
                         ${object.partner_id.street2}<br/>
@@ -275,9 +275,9 @@
 	<table style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse">
 		<tbody>
 			<tr>
-				<td style="padding:4px 6px">For inquiries, please call PH: +612 9319 4422 or email
-					<span class="m_-4095914086938366884Apple-converted-space"></span>
-					<a href="mailto:account@gentecaustralia.com.au" target="_blank">account@gentecaustralia.com.au</a>
+				<td style="padding:4px 6px">
+                    ${"For inquiries, please call PH: {} or email ".format(user.company_id.phone)}
+					<a href="mailto:account@gentecaustralia.com.au" target="_blank">${user.company_id.email}</a>
 				</td>
 			</tr>
 		</tbody>
