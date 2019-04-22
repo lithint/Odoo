@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="hv_custom_format" model="report.paperformat">
+            <field name="name">A4 custom by Havi</field>
+            <field name="default" eval="True"/>
+            <field name="format">custom</field>
+            <field name="page_height">297</field>
+            <field name="page_width">210</field>
+            <field name="orientation">Portrait</field>
+            <field name="margin_top">67</field>
+            <field name="margin_bottom">37</field>
+            <field name="margin_left">7</field>
+            <field name="margin_right">7</field>
+            <field name="header_line" eval="False"/>
+            <field name="header_spacing">60</field>
+            <field name="dpi">96</field>
+        </record>
+<!-- ============================================================================================== -->
+        <template id="my_layout">
+            <t t-if="not o" t-set="o" t-value="doc"/>
+
+            <t t-if="not company">
+                <!-- Multicompany -->
+                <t t-if="company_id">
+                    <t t-set="company" t-value="company_id"/>
+                </t>
+                <t t-elif="o and 'company_id' in o">
+                    <t t-set="company" t-value="o.company_id.sudo()"/>
+                </t>
+                <t t-else="else">
+                    <t t-set="company" t-value="res_company"/>
+                </t>
+            </t>
+
+            <t t-call="hv_customer_statement.my_report"><t t-raw="0"/></t>
+        </template>
+<!-- ============================================================================================== -->
+        <template id="my_report">
+            <div class="header">
+                <table class="m_-4095914086938366884header" style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse">
+                    <tbody>
+                        <tr>
+                            <td align="left" style="padding:1px;font-size:10pt">
+                                <div >
+                                <span class="m_-4095914086938366884title" style="font-weight:bold;font-size:20pt">Statement</span>
+                                </div>
+                            </td>
+                            <td align="right" style="padding:1px;font-size:10pt">
+                                <div >
+                                    <img src="https://ci5.googleusercontent.com/proxy/kKca2Yb9ZHUXGonBTsBz5H9t4PDZe0WUXaOf7LU04W2YT3nTw5eINKulnwXQjtiV4cqtZyPZMYFFVOa6abLz6-EPwVzBn2Slh3jdEpOUPAZ3I0SqIg5Lvc9lp4m05tMx84LsnMICd7g88jiUTG8=s0-d-e1-ft#https://system.na2.netsuite.com/core/media/media.nl?id=719&amp;c=4514937&amp;h=ff4ba428522156afb694" style="margin:7px" class="CToWUd"/>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr><td><div><br/></div></td><td><div><br/></div></td></tr>
+                        <tr>
+                            <td>
+                                <div style="float:left;padding:1px;font-weight:bold;font-size:10pt;vertical-align:middle;text-align:left;color:rgb(12,84,123);">
+                                    Date<br/><br/>
+                                    Amount Due<br/>
+                                    Currency<br/>
+                                    Payment Terms<br/>
+                                </div>
+                                <div style="float:left; margin-right: 100px;"><br/></div>
+                                <div style="float:left;padding-left:1px;font-weight:nomal;font-size:10pt;vertical-align:middle;text-align:left;color:rgb(0,0,0);">
+                                    <span t-field="o.statement_id.statement_date"/><br/><br/>
+                                    <span t-esc="o.balance" t-options='{"widget": "monetary", "display_currency": o.invoice_ids[0].currency_id}'/><br/>
+                                    <span t-field="o.invoice_ids[0].currency_id.name"/><br/>
+                                    <span t-field="o.customer_id.property_payment_term_id.name"/>
+                                    <!-- Payment Terms -->
+                                </div>
+                            </td>
+                            <td class="m_-4095914086938366884header">
+                                <div style="float:right; margin-right: 16px;"><br/></div>
+                                <div style="float:right;font-weight:bold;font-size:11pt;vertical-align:middle;text-align:left;color:rgb(12,84,123);">
+                                    <span t-field="company.name"/>
+                                    <div style="font-weight:normal;font-size:10pt;vertical-align:top;text-align:left;;color:rgb(0,0,0); line-height:0.95;">
+                                        <li t-if="company.street" class="list-inline-item"><span t-field="company.street"/></li>
+                                        <br/>
+                                        <li class="list-inline-item">
+                                            <t t-if="company.city"><span t-field="company.city"/></t>
+                                            <t t-if="company.state_id"><span t-field="company.state_id.name"/></t>
+                                            <t t-if="company.zip"><span t-field="company.zip"/></t>
+                                        </li>
+                                        <br/>
+                                        <li t-if="company.country_id" class="list-inline-item"><span t-field="company.country_id.name"/></li><br/>
+                                        <li t-if="company.phone" class="list-inline-item">PH: <span t-field="company.phone"/></li><br/>
+                                        <li t-if="company.website" class="list-inline-item"><span t-field="company.website"/></li><br/>
+                                        <li t-if="company.vat" class="list-inline-item"><t t-esc="company.country_id.vat_label or 'Tax ID'"/>: # <span t-field="company.vat"/></li>		
+                                    </div>
+                                </div>
+                            </td>			
+                        </tr>		
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="article o_report_layout_standard"  t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+                <t t-call="web.address_layout"/>
+                <t t-raw="0"/>
+            </div>
+
+            <div class="footer o_standard_footer">
+                 <table class="m_-4095914086938366884header" style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse">
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div style="float:left;padding-left:20px;font-weight:bold;font-size:11pt;vertical-align:middle;text-align:left;color:rgb(12,84,123);">
+                                    Direct Debit Details<br/><br/>
+                                    <div style = "font-weight:normal;color:black;font-size:10pt">
+                                        Gentec Australia Pty Ltd<br/>
+                                        Bank: Westpac Banking Corporation<br/>
+                                        BSB: 032090 Account No: 160492<br/>
+                                        Swift Code: WPACAU2S<br/>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="m_-4095914086938366884header">
+                                <div style="float:right; margin-right: 50px;"><br/></div>
+                                <div style="float:right;font-weight:normal;font-size:10pt;vertical-align:middle;text-align:left;color:black;">
+                                    <span t-field="o.statement_id.statement_date"/><br/><br/>
+                                    <span t-esc="o.balance" t-options='{"widget": "monetary", "display_currency": o.invoice_ids[0].currency_id}'/><br/>
+                                    <span t-esc="o.total-o.balance" t-options='{"widget": "monetary", "display_currency": o.invoice_ids[0].currency_id}'/><br/>
+                                </div>
+                                <div style="float:right; margin-right: 100px;"><br/></div>
+                                <div style="float:right;font-weight:bold;font-size:10pt;vertical-align:middle;text-align:left;color:rgb(12,84,123);">
+                                    Date<br/><br/>
+                                    Amount Due<br/>
+                                    Amount Paid<br/><br/><br/><br/>
+                                </div>
+                            </td>			
+                        </tr>		
+                    </tbody>
+                </table>
+            </div>
+        </template>
+<!-- <===========================================================================================--> -->
+        <template id="report_customer_statement_document">
+            <t t-call="hv_customer_statement.my_layout">
+                <t t-set="o" t-value="o.with_context({'lang': lang})"/>
+                <div class="page">
+                    <div class="row mt64">
+                        <div class="col-6">
+                            <div style="float:left;font-weight:bold;font-size:11pt;vertical-align:middle;text-align:left;color:rgb(12,84,123)">
+                                <span t-field="o.customer_id.name"/>
+                                <div style="font-weight:normal;font-size:10pt;vertical-align:middle;text-align:left;;color:rgb(0,0,0);line-height:0.95;">
+                                    <li t-if="o.customer_id.street" class="list-inline-item"><span t-field="o.customer_id.street"/></li>
+                                    <br/>
+                                    <li class="list-inline-item">
+                                        <t t-if="o.customer_id.city"><span t-field="o.customer_id.city"/></t>
+                                        <t t-if="o.customer_id.state_id"><span t-field="o.customer_id.state_id.name"/></t>
+                                        <t t-if="o.customer_id.zip"><span t-field="o.customer_id.zip"/></t>
+                                    </li>
+                                    <br/>
+                                    <li t-if="o.customer_id.country_id" class="list-inline-item"><span t-field="o.customer_id.country_id.name"/></li>
+                                    <br/><br/><br/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr style="color: #FFF; font-family:Arial, sans-serif; font-style: normal; font-weight: bold; text-decoration: none; font-size: 10pt;background-color: #666666;">
+                                <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >PO No.</td>
+                                <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Date</td>
+                                <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Print Date</td>
+                                <td style="width:150pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Description</td>
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Amount</td>
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Applied</td>
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Remaining</td>
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Balance</td>
+                            </tr>
+                        </thead>
+                        <tbody >
+                            <t t-set="line_bal" t-value="0"/>
+                            <tr style="color: black; font-family:Arial, sans-serif; font-style: normal; font-weight: normal; text-decoration: none; font-size: 10pt;background-color: white;" t-foreach="o.invoice_ids" t-as="inv">
+                                <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.client_order_ref"/></td>
+                                <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-field="inv.date_invoice"/></td>
+                                <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ></td>
+                                <td style="width:150pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-field="inv.name"/></td>
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.amount_total_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.amount_total_signed-inv.residual_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.residual_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.residual_signed+line_bal" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
+                                <t t-set="line_bal" t-value="inv.residual_signed+line_bal"/>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </template>
+<!-- <===========================================================================================--> -->
+        <template id="report_customer_statement">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="o">
+                    <t t-set="lang" t-value="o.customer_id.lang"/>
+                    <t t-call="hv_customer_statement.report_customer_statement_document" t-lang="lang"/>
+                </t>
+            </t>
+        </template>
+
+        <report
+            id="action_report_customer_statement"
+            model="hv.customer.statement.line"
+            string="Statement"
+            report_type="qweb-pdf"
+            name="hv_customer_statement.report_customer_statement"
+            file="hv_customer_statement.report_customer_statement"
+            print_report_name="('Statement {} {:%Y-%m-%d}'.format(object.customer_id.name, object.statement_id.start_date))"
+        />
+            <!-- attachment="('Statement ' + str(object.start_date.day)+ str(object.start_date.month)+ str(object.start_date.year) +'.pdf')"  -->
+
+        <record id="action_report_customer_statement" model="ir.actions.report">
+            <field name="paperformat_id" ref="hv_customer_statement.hv_custom_format"/>
+        </record>
+<!--  =========================================================================================== -->
+<record id="email_template_customer_statement" model="mail.template">
+            <field name="name">Customer Statement: Send by email</field>
+            <field name="model_id" ref="model_hv_customer_statement_line"/>
+            <field name="email_from">${object.create_uid.email_formatted |safe}</field>
+            <!-- <field name="partner_to">${object.partner_id.id}</field> -->
+            <field name="email_to">${object.email_address}</field>
+            <field name="subject">Statement ${object.customer_id.name or 'n/a'}</field>
+            <field name="body_html" type="html">
+<div>
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Dear ${object.customer_id.name}
+        % if object.customer_id.parent_id:
+            (${object.customer_id.parent_id.name})
+        % endif
+        <br /><br />
+        Please open the attached file to view your Statement.
+        <br/><br/>
+        Best regards,<br/>
+        % if user and user.signature:
+        ${user.signature | safe}
+        % endif
+    </p>
+</div>
+            </field>
+            <field name="report_template" ref="hv_customer_statement.action_report_customer_statement"/>
+            <field name="report_name">Statement_${(object.customer_id.name or '').replace('/','-')}</field>
+            <field name="lang">${object.customer_id.lang}</field>
+            <field name="auto_delete" eval="True"/>
+            <field name="user_signature" eval="False"/>
+        </record>
+<!--  =========================================================================================== -->        
+        <record id="customer_statement_form_view" model="ir.ui.view">
+            <field name="name">hv.customer.statement.form</field>
+            <field name="model">hv.customer.statement</field>
+            <field name="arch" type="xml">
+                <form string="Customer Statment Form View">
+                    <header>
+                        <!-- <button name="print_customer_statement" type="object" string="Print" class="btn-primary" attrs="{'invisible': [('line_ids','=',[])]}"/> -->
+                        <button name="send_mail_customer_statement" type="object" string="Send Email" class="btn-primary" attrs="{'invisible': [('line_ids','=',[])]}"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="statement_date"/>
+                                <field name="start_date"/>
+                                <field name="emailtemplate" invisible="1"/>
+                                <field name="include0balance"/>
+                            </group>
+                            <group>
+                                <field name="showonlyopen"/>
+                                <field name="consolidatedsm"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Customer Lines">
+                                <field 
+                                    name="line_ids" 
+                                    widget="section_and_note_one2many"
+                                    mode="tree,form"
+                                    context="{'default_invoice_id': id}"
+                                >
+                                    <tree string="Customers" editable="bottom">
+                                        <field name="customer_id"  domain="[('customer', '=', True)]"/>
+                                        <field name="email_address"/>
+                                        <field name="balance"/>
+                                        <field name="overdue"/>
+                                        <!-- <field name="invoice_ids"/> -->
+                                        <field name="email_send"/>
+                                        <button name="print_customer_statement" type="object" string="print" class="oe_highlight"/>
+                                    </tree>
+                                    <form string="Customers" readonly="1">
+                                        <sheet>
+                                            <group>
+                                                <field name="customer_id"/>
+                                                <field name="email_address"/>
+                                                <field name="balance"/>
+                                                <field name="overdue"/>
+                                                <field name="email_send"/> 
+                                                <field name="invoice_ids" invisible="1"/>     
+                                            </group>
+                                        </sheet>
+                                    </form>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+            
+        <record id="customer_statement_tree_view" model="ir.ui.view">
+            <field name="name">hv.customer.statement.tree</field>
+            <field name="model">hv.customer.statement</field>
+            <field name="arch" type="xml">
+                <tree string="Customer Statement Tree View" create="true" import="false" delete="true">
+                    <field name="statement_date"/>
+                    <field name="start_date"/>
+                    <field name="emailtemplate"/>
+                    <field name="include0balance"/>
+                    <field name="showonlyopen"/>
+                    <field name="consolidatedsm"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_view_send_customer_statement" model="ir.actions.act_window">
+            <field name="name">Send Customer Statement</field>
+            <field name="res_model">hv.customer.statement</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('customer_statement_tree_view')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('customer_statement_form_view')})]"/>
+            <field name="help" type="html">
+              <p class="o_view_nocontent_smiling_face">
+                !!!
+              </p>
+            </field>
+        </record>
+
+        <menuitem id="send_customer_statement" name="Send Customer Statement" parent="account.menu_finance_receivables"
+                action="action_view_send_customer_statement" sequence="2"/>
+
+    </data>
+</odoo>
