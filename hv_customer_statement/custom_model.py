@@ -93,7 +93,7 @@ class hv_customer_statement_line(models.Model):
 
     def search_invoice(self):
         if self.customer_id:
-            self.invoice_ids = self.env['account.invoice'].search([('partner_id', '=', self.customer_id.id), ('state', '=', ['open']), ('type', 'in', ['out_invoice', 'out_refund']), ('date_invoice', '>=', self.statement_id.start_date), ('date_invoice', '<=', self.statement_id.statement_date)])
+            self.invoice_ids = self.env['account.invoice'].search([('partner_id', '=', self.customer_id.id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund']), ('date_invoice', '>=', self.statement_id.start_date), ('date_invoice', '<=', self.statement_id.statement_date)])
 
     def print_customer_statement(self):
         self.search_invoice()
