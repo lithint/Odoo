@@ -5,12 +5,34 @@ import unicodedata
 import chardet
 import io
 import operator
+import csv
+import tempfile
+import time
 
+from odoo.addons.web.controllers.main import serialize_exception, content_disposition
+from odoo import http
+from odoo.http import request
 from itertools import groupby
 from odoo.exceptions import UserError, ValidationError
 from odoo import api, exceptions, fields, models, _
 from odoo.tools.mimetypes import guess_mimetype
 from odoo.tools import config, DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT, pycompat
+
+class Binary(http.Controller):
+    @http.route('/web/binary/download_document', type='http', auth="public")
+    @serialize_exception
+    def download_document(self, model, field, id, filename=None, **kw):
+        Model = request.env[model]
+        res = Model.browse([int(id)])
+        filecontent = base64.b64decode(res.datas)
+        if not filecontent:
+            res.unlink()
+            return request.not_found()
+        else:
+            res.unlink()
+            return request.make_response(filecontent,
+                                         [('Content-Type', 'application/octet-stream'),
+                                          ('Content-Disposition', content_disposition(filename))])
 
 try:
     import xlrd
@@ -210,7 +232,7 @@ class hv_batch_invoice_account_payment(models.Model):
 
 class hv_account_invoice(models.Model):
     _inherit = "account.invoice"
-    
+
     def _search_id(self, query):
         if not query:
             return []
@@ -218,7 +240,7 @@ class hv_account_invoice(models.Model):
         res = self._cr.fetchall()
         if not res:
             return []
-        return [[r[0], r[1]] for r in res]
+        return [[r[0], r[1], r[2]] for r in res]
 
 class hv_batch_invoice(models.Model):
     _name = 'batch.invoice'
@@ -305,6 +327,33 @@ class InvoiceImportResult(models.Model):
     filename = fields.Char(string='File Name')
     total_rows = fields.Integer(string='Total row(s)', readonly=True)
     import_rows = fields.Integer(string='Imported row(s)' ,readonly=True)
+    
+    def download_ir(self):
+        if self.importreuslt_ids:
+            data = [['.TranNo', 'Status',]]
+            for line in self.importreuslt_ids:
+                data.append([line.tranno, line.state,])
+            file_name = tempfile.gettempdir() + '/text.csv'
+            with open(file_name, 'w') as fp:
+                a = csv.writer(fp, delimiter=',')
+                a.writerows(data)
+            with open(file_name, 'rb') as fp:
+                attach = self.env['ir.attachment'].create({
+                    'name': file_name,
+                    'res_name': file_name,
+                    'res_model': 'batch.invoice.import.result',
+                    'res_id': self.id,
+                    'datas': base64.encodestring(fp.read()),
+                    'datas_fname': file_name,
+                })
+                return {
+                    'type': 'ir.actions.act_url',
+                    'url': '/web/binary/download_document?model=ir.attachment&field=datas&id=%s&filename=%s' % (
+                        attach.id, 'IRS_%s_%s.csv' % (self.filename, self.write_date.strftime('%Y%m%d%H%M'))),
+                    'target': 'current',
+                }
+        return self.env['havi.message'].action_warning('No data found.','Download Import Result') 
+
 
 class hv_message(models.TransientModel):
     _name = 'havi.message'
@@ -326,7 +375,7 @@ class hv_message(models.TransientModel):
             numbers = numbers[0:len(numbers)-1]
             if 'x_studio_jcurve_invoice' in self.env['account.invoice']._fields:
                 query = """
-                        SELECT ac.id, right(ac.number,5) number
+                        SELECT ac.id, right(ac.number,5) number, right(ac.x_studio_jcurve_invoice,5) x_studio_jcurve_invoice
                             FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
                             where (right(ac.number,5) in (%s) or right(ac.x_studio_jcurve_invoice,5) in (%s))
                                 and ac.state = 'open' 
@@ -335,7 +384,7 @@ class hv_message(models.TransientModel):
                                 """ % (numbers, numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
             else:
                 query = """
-                        SELECT ac.id, right(ac.number,5) number
+                        SELECT ac.id, right(ac.number,5) number, right(ac.number,5) number1
                             FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
                             where right(ac.number,5) in (%s) 
                                 and ac.state = 'open' 
@@ -344,6 +393,7 @@ class hv_message(models.TransientModel):
                                 """ % (numbers, batch_invoice.customer_id.id, batch_invoice.customer_id.id)
             invoice_ids = self.env['account.invoice']._search_id(query)
             if invoice_ids:
+                batch_invoice.write({'invoice_ids' : [(5,)]})
                 batch_invoice.write({'invoice_ids' : [(4,  invoice_id[0]) for invoice_id in invoice_ids]})
 
             resutl = self.env['batch.invoice.import.result'].create({
@@ -354,10 +404,16 @@ class hv_message(models.TransientModel):
             })
             for data in datas:
                 f = False
-                for match in invoice_ids:
-                    if data[number_index[0]] == match[1]:
-                        f = True
-                        break
+                if 'x_studio_jcurve_invoice' in self.env['account.invoice']._fields:
+                    for match in invoice_ids:
+                        if data[number_index[0]] == match[1] or data[number_index[0]] == match[2]:
+                            f = True
+                            break
+                else:
+                    for match in invoice_ids:
+                        if data[number_index[0]] == match[1]:
+                            f = True
+                            break
                 if not f:
                     self.env['batch.invoice.import.result.line'].create({
                     'import_id': resutl.id,

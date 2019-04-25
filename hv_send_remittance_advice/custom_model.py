@@ -23,32 +23,7 @@ OPTIONS = {
 
 class hv_account_abstract_payment(models.AbstractModel):
     _inherit = "account.abstract.payment"  
-
-class AccountBatchPayment(models.Model):
-    _inherit = "account.batch.payment"
-
-    payment_ids = fields.One2many('account.payment', 'batch_payment_id', string="Payments", required=False,  readonly=True, states={'draft': [('readonly', False)]})
     
-    @api.constrains('batch_type', 'journal_id', 'payment_ids')
-    def _check_payments_constrains(self):
-        for record in self:
-            if record.payment_ids:
-                all_companies = set(record.payment_ids.mapped('company_id'))
-                if len(all_companies) > 1:
-                    raise ValidationError(_("All payments in the batch must belong to the same company."))
-                all_journals = set(record.payment_ids.mapped('journal_id'))
-                if len(all_journals) > 1 or record.payment_ids[0].journal_id != record.journal_id:
-                    raise ValidationError(_("The journal of the batch payment and of the payments it contains must be the same."))
-                all_types = set(record.payment_ids.mapped('payment_type'))
-                if len(all_types) > 1:
-                    raise ValidationError(_("All payments in the batch must share the same type."))
-                if all_types and record.batch_type not in all_types:
-                    raise ValidationError(_("The batch must have the same type as the payments it contains."))
-                all_payment_methods = set(record.payment_ids.mapped('payment_method_id'))
-                if len(all_payment_methods) > 1:
-                    raise ValidationError(_("All payments in the batch must share the same payment method."))
-                if all_payment_methods and record.payment_method_id not in all_payment_methods:
-                    raise ValidationError(_("The batch must have the same payment method as the payments it contains."))
 
 class hv_account_register_payment(models.TransientModel):
     _inherit = "account.register.payments"
@@ -100,7 +75,8 @@ class hv_account_payment(models.Model):
 
     @api.model
     def create(self, vals):
-        vals.update({'email_vendor': self.env['res.partner'].browse(vals.get('partner_id')).email})
+        if self._context.get('batch_payment_id'):
+            vals.update({'email_vendor': self.env['res.partner'].browse(vals.get('partner_id')).email})
         return super(hv_account_payment, self).create(vals)
 
 class hv_batch_email_send_abs(models.AbstractModel):
@@ -131,25 +107,67 @@ class hv_batch_email_send(models.TransientModel):
 class hv_account_batch_payment(models.Model):
     _inherit = 'account.batch.payment'
 
+    payment_ids = fields.One2many('account.payment', 'batch_payment_id', string="Payments", required=False,  readonly=True, states={'draft': [('readonly', False)]})
+
+    @api.constrains('batch_type', 'journal_id', 'payment_ids')
+    def _check_payments_constrains(self):
+        for record in self:
+            if record.payment_ids:
+                all_companies = set(record.payment_ids.mapped('company_id'))
+                if len(all_companies) > 1:
+                    raise ValidationError(_("All payments in the batch must belong to the same company."))
+                all_journals = set(record.payment_ids.mapped('journal_id'))
+                if len(all_journals) > 1 or record.payment_ids[0].journal_id != record.journal_id:
+                    raise ValidationError(_("The journal of the batch payment and of the payments it contains must be the same."))
+                all_types = set(record.payment_ids.mapped('payment_type'))
+                if len(all_types) > 1:
+                    raise ValidationError(_("All payments in the batch must share the same type."))
+                if all_types and record.batch_type not in all_types:
+                    raise ValidationError(_("The batch must have the same type as the payments it contains."))
+                all_payment_methods = set(record.payment_ids.mapped('payment_method_id'))
+                if len(all_payment_methods) > 1:
+                    raise ValidationError(_("All payments in the batch must share the same payment method."))
+                if all_payment_methods and record.payment_method_id not in all_payment_methods:
+                    raise ValidationError(_("The batch must have the same payment method as the payments it contains."))
+    
+    def validate_batch(self):
+        records = self.filtered(lambda x: x.state == 'draft')
+        for rec in records:
+            if rec.payment_ids:
+                i = 1
+                group_partner = []
+                for pm in rec.payment_ids:
+                    if pm.partner_id.id not in group_partner:
+                        group_partner.append(pm.partner_id.id)
+                
+                for g in group_partner:
+                    for pm in rec.payment_ids:
+                        if pm.partner_id.id == g:
+                            pm.write({'state':'sent', 'payment_reference' : 'BO' + rec.name[-10:] + '/' + str(i)})
+                    i += 1  
+
+        records.write({'state': 'sent'})
+        records = self.filtered(lambda x: x.file_generation_enabled)
+        if records:
+            return self.export_batch_payment()
+
     @api.model
     def create(self, vals):
         rec = super(hv_account_batch_payment, self).create(vals)
         if rec.payment_ids:
-            i = 1
             for pm in rec.payment_ids:
-                pm.write({'payment_reference' : 'BO' + rec.name[-10:] + '/' + str(i)})
-                i += 1        
+                if not pm.email_vendor:
+                    pm.write({'email_vendor' : pm.partner_id.email})    
         return rec
 
     @api.multi
     def write(self, vals):
         rec = super(hv_account_batch_payment, self).write(vals)
         if 'payment_ids' in vals:
-            if self.payment_ids:
-                i = 1
-                for pm in self.payment_ids:
-                    pm.write({'payment_reference' : 'BO' + self.name[-10:]+ '/' + str(i)})
-                    i += 1        
+            rec = self
+            for pm in rec.payment_ids:
+                if not pm.email_vendor:
+                    pm.write({'email_vendor' : pm.partner_id.email})          
         return rec
 
     def action_send_remittance_advice(self):
@@ -169,10 +187,7 @@ class hv_account_batch_payment(models.Model):
                     vendor[item.partner_id.id]['emal_cc'] = item.email_cc
                 vendor[item.partner_id.id]['payment_ids'].append(item.id) 
         if not vendor:
-            alert = self.env['warning.hv.send.remit.advice'].create({})
-            alert.name='Payment to send not found.'
-            alert.title = 'SEND REMITTANCE ADVICE'
-            return alert.action_warning()
+            return self.env['havi.message'].action_warning('Payment to send not found.','Send Remittance Advice')
 
         default_template = self.env.ref('hv_send_remittance_advice.email_template_batch_payment', False)      
         for item in vendor:
@@ -195,35 +210,12 @@ class hv_account_batch_payment(models.Model):
                 default_template_id=default_template and default_template.id or False,
                 # default_composition_mode='comment',
                 default_composition_mode='mass_mail',
-                mark_invoice_as_sent=True,
-                force_email=True
+
             )
             wizard_mail = self.env['mail.compose.message'].with_context(ctx).create({})
             wizard_mail.onchange_template_id_wrapper()
             wizard_mail.send_mail()
             for pid in batch.payment_ids:
                 pid.email_send += 1
-        alert = self.env['warning.hv.send.remit.advice'].create({})
-        alert.name='Send remittance advice completed.'
-        alert.title = 'SEND REMITTANCE ADVICE'
-        return alert.action_warning()
+        return self.env['havi.message'].action_warning('Send remittance advice completed.','Send Remittance Advice')
 
-
-class MyWarning(models.TransientModel):
-    _name = 'warning.hv.send.remit.advice'
-
-    title = fields.Char('Title', readonly=True)
-    name = fields.Char('Name', readonly=True)
-    @api.multi
-    def action_warning(self):
-        return {
-            'name': self.title,
-            'view_type': 'form',
-            'view_mode': 'form',
-            'view_id': self.env.ref('hv_send_remittance_advice.warning').id,
-            'res_model': 'warning.hv.send.remit.advice',
-            'type': 'ir.actions.act_window',
-            'res_id': self.id,
-            'target': 'new',
-            'context': {},
-        }

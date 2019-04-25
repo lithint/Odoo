@@ -1,25 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="warning" model="ir.ui.view">
-            <field name="model">warning.hv.send.remit.advice</field>
-            <field name="arch" type="xml">
-                <form string="SEND REMITTANCE ADVICE">
-                    <div class="oe_grey">
-                        <field name="name" readonly="1"/>
-                    </div>
-                    <footer>
-                        <!-- <button string=“Continue”
-                            class="oe_highlight"
-                            type="object"
-                            name="action_warning"/>
-                        or -->
-                        <button name="cancel" string="OK" special="cancel" class="oe_link"/>
-                    </footer>
-                </form>
-            </field>
-
-        </record>
         <record id="view_batch_payment_form_inherit" model="ir.ui.view">
             <field name="name">hv.account.batch.payment.form.inherit</field>
             <field name="model">account.batch.payment</field>
@@ -158,7 +139,7 @@
             <!-- <field name="partner_to">${object.partner_id.id}</field> -->
             <field name="email_to">${object.email_vendor}</field>
             <field name="email_cc">${object.email_cc}</field>
-            <field name="subject">Payment Notification ${object.name or 'n/a'}</field>
+            <field name="subject">Payment Notification ${object.payment_ids[0].payment_reference or 'n/a'}</field>
             <field name="body_html" type="html">
 <div><u></u><u></u><u></u>
 	<table class="m_-4095914086938366884header" style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse">
@@ -236,7 +217,7 @@
 				<th style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123);text-align:left">Currency</th>
 			</tr>
 			<tr>
-				<td style="padding:4px 6px">${object.name}</td>
+				<td style="padding:4px 6px">${object.payment_ids[0].payment_reference}</td>
 				<td style="padding:4px 6px">${object.date}</td>
 				<td style="padding:4px 6px">${object.currency_id.name}</td>
 			</tr>
@@ -255,14 +236,16 @@
 		</thead>
 		<tbody>
             % if object.payment_ids:
-                % for line in object.payment_ids:
-                    <tr>
-                        <td align="left" style="padding:4px 6px">${line.payment_date}</td>
-                        <td align="left" style="padding:4px 6px">${line.name}</td>
-                        <td align="right" style="padding:4px 6px">${line.payment_date}</td>
-                        <td align="right" style="padding:4px 6px">${format_amount(line.amount, line.currency_id)}</td>
-                        <td align="right" style="padding:4px 6px">${format_amount(line.amount, line.currency_id)}</td>
-                    </tr>
+                % for pay in object.payment_ids:
+                    % for line in pay.invoice_ids:
+                        <tr>
+                            <td align="left" style="padding:4px 6px">${line.date_invoice}</td>
+                            <td align="left" style="padding:4px 6px">${line.number}</td>
+                            <td align="right" style="padding:4px 6px">${line.date_due}</td>
+                            <td align="right" style="padding:4px 6px">${format_amount(line.amount_total_signed, line.currency_id)}</td>
+                            <td align="right" style="padding:4px 6px">${format_amount(pay.amount, pay.currency_id)}</td>
+                        </tr>
+                    % endfor
                 % endfor
             % endif
 			<tr>
