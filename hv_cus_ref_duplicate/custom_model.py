@@ -67,7 +67,7 @@ class SaleOrder(models.Model):
             if res:
                 warning = {'warning': {
                 'title': _("Duplicated SO Found!!!"),
-                'message': _('Values "%s" was duplicated with SO: "%s"' % (self.client_order_ref, res.name)) 
+                'message': _('Values "%s" was duplicated with SO: "%s" created by "%s' % (self.client_order_ref, res.name, res.create_uid.name)) 
                 }}
                 if self._origin.id:
                     self.client_order_ref = self._origin.client_order_ref

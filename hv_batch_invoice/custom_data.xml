@@ -1,6 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+    <record id="pack_rebate_form_view" model="ir.ui.view">
+            <field name="name">pack.rebate.form</field>
+            <field name="model">pack.rebate</field>
+            <field name="arch" type="xml">
+                <form string="Payment Model Form View">
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="default"/>
+                        </group>
+                        <notebook colspan="4">
+                            <page string="Account Ratio">
+                                <field name="packline_ids" 
+                                    widget="section_and_note_one2many"
+                                >
+                                    <tree editable="bottom" >
+                                        <field name="account_id"/>
+                                        <field name="ratio"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+            
+        <record id="pack_rebate_tree_view" model="ir.ui.view">
+            <field name="name">pack.rebate.tree</field>
+            <field name="model">pack.rebate</field>
+            <field name="arch" type="xml">
+                <tree string="Payment Model Tree View" create="true" import="false" delete="true">
+                    <field name="name"/>
+                    <field name="default"/>
+                </tree>
+            </field>
+        </record>
+        <record id="action_pack_form" model="ir.actions.act_window">
+            <field name="name">Payment Model</field>
+            <field name="res_model">pack.rebate</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('pack_rebate_tree_view')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('pack_rebate_form_view')})]"/>
+            <field name="help" type="html">
+              <p class="o_view_nocontent_smiling_face">
+                !!!
+              </p>
+            </field>
+        </record>
+        <menuitem action="action_pack_form" name="Payment Model" id="menu_action_pack_form" parent="account.account_account_menu" groups="account.group_account_user" sequence="2"/>
+    <!--  =========================================================================================== -->
+
         <record id="res_partner_view_form" model="ir.ui.view">
             <field name="name">res.partner.form</field>
             <field name="model">res.partner</field>
@@ -68,15 +122,15 @@
                         <div>
                             <field name="payment_difference"/>
                             <field name="payment_difference_handling" widget="radio" nolabel="1"/>
-                            <div attrs="{'invisible': [('payment_difference_handling','=','open')]}">
-                                <label for="writeoff_account_ids" class="oe_edit_only" string="Payment Rest: "/>
+                            <group attrs="{'invisible': [('payment_difference_handling','=','open')]}">
                                 <field name="payment_difference_rest" string="Payment Rest"/>
+                                <field name="pack_id"/>
                                 <field name="writeoff_account_ids" string="Post Difference In" attrs="{'required': [('payment_difference_handling', '=', 'reconcile')]}"/>
                                 <label for="journal_id" string="Journal" attrs="{'invisible': [('amount', '!=', 0)]}"/>
                                 <field name="journal_id" string="Journal" widget="selection" attrs="{'invisible': [('amount', '!=', 0)]}"/>
                                 <!-- <label for="writeoff_label" class="oe_edit_only" string="Label"/>
                                 <field name="writeoff_label" attrs="{'required': [('payment_difference_handling', '=', 'reconcile')]}"/> -->
-                            </div>
+                            </group>
                         </div>
                     </group>
                     <footer>

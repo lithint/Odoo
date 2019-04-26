@@ -87,12 +87,12 @@ class hv_batch_invoice_product(models.Model):
 class hv_batch_invoice_writeoff(models.Model):
     _name = 'batch.account.writeoff'
 
-    writeoff_account_id = fields.Many2one('account.account', string="Difference Account", domain=[('deprecated', '=', False)], copy=False)
+    writeoff_account_id = fields.Many2one('account.account', string="Difference Account", domain=[('deprecated', '=', False)], copy=False, required=True)
     writeoff_label = fields.Char(
         string='Journal Item Label',
         help='Change label of the counterpart that will hold the payment difference',
         default='Write-Off')
-    amount = fields.Float(string='Amount')
+    amount = fields.Float(string='Amount', required=True)
     payment_id = fields.Many2one('account.abstract.payment', string='Originator Payment')
     
     @api.onchange('amount')
@@ -103,10 +103,30 @@ class hv_batch_invoice_writeoff(models.Model):
 class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
     _inherit = 'account.abstract.payment'
     
+    pack_id = fields.Many2one('pack.rebate', string='Payment Model', stored=False)
     writeoff_account_ids = fields.One2many('batch.account.writeoff','payment_id')
     payment_difference_rest = fields.Float(string='Payment rest', readonly=True, compute='_compute_rest')
-    batch_invoice_id = fields.Many2one('batch.invoice')
+    batch_invoice_id = fields.Many2one('batch.invoice' )
     
+    @api.onchange('pack_id')
+    def _onchange_pack_id(self):
+        if not self.pack_id:
+            return
+        if self._origin.pack_id and self.pack_id.id == self._origin.pack_id.id:
+            return
+        if self.writeoff_account_ids:
+            self.writeoff_account_ids = [(5,)]
+
+        if self.pack_id.packline_ids:
+            lid = []
+            for l in self.pack_id.packline_ids:
+                wo = self.writeoff_account_ids.create({
+                    'writeoff_account_id': l.account_id.id,
+                    'amount': self.currency_id.round(self.payment_difference_rest/l.ratio),
+                    'payment_id': self.id
+                })
+                lid.append(wo.id)
+            self.writeoff_account_ids = [(6, 0, lid)]
     @api.one
     @api.depends('writeoff_account_ids', 'payment_difference')
     def _compute_rest(self):
@@ -424,3 +444,18 @@ class hv_message(models.TransientModel):
             return self.env['havi.message'].action_warning('- Total invoices in file: %s invoice(s).\n\n- Import was successfull with %s row(s).' % (len(datas), len(invoice_ids)),'Import Result') 
         else:
             return super(hv_message, self).import_file()
+
+class PackRebateLine(models.Model):
+    _name = "pack.rebate.line"
+
+    account_id = fields.Many2one('account.account', string='Account', required=True)
+    ratio = fields.Float(string='Ratio /', digits= (3,1), default=0.0)
+    pack_id = fields.Many2one('pack.rebate')
+
+class PackRebate(models.Model):
+    _name = "pack.rebate"
+
+    name = fields.Char(string='Payment Model', required=True)
+    default = fields.Boolean(string='Payment Default', default=False)
+    packline_ids = fields.One2many('pack.rebate.line', 'pack_id', string='Account Ratio')
+

@@ -4,6 +4,8 @@ access_batch_account_writeoff,batch_account_writeoff,model_batch_account_writeof
 access_account_abstract_payment,account_abstract_payment,model_account_abstract_payment,account.group_account_user,1,1,1,1
 access_batch_invoice_import_result_line,batch_invoice_import_result_line,model_batch_invoice_import_result_line,account.group_account_user,1,1,1,1
 access_batch_invoice_import_result,batch_invoice_import_result,model_batch_invoice_import_result,account.group_account_user,1,1,1,1
+access_pack_rebate,pack_rebate,model_pack_rebate,account.group_account_user,1,1,1,1
+access_pack_rebate_line,pack_rebate_line,model_pack_rebate_line,account.group_account_user,1,1,1,1
 
 
 
