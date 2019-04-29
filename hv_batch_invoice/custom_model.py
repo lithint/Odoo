@@ -310,6 +310,15 @@ class hv_batch_invoice(models.Model):
     def action_register_payment_hv(self):
         if not self.invoice_ids:
             raise UserError(_('You cannot register without any invoice.'))
+        for cn in self.invoice_ids:
+            if cn.type == 'out_refund' and cn.state == 'open':
+                for i in self.invoice_ids:
+                    if i.type == 'out_invoice' and i.state == 'open':
+                        lines = self.env['account.move.line'].search([('invoice_id', '=', i.id),('credit', '=', 0), ('debit', '>', 0)])
+                        cn.assign_outstanding_credit(lines.id)
+                        if cn.state =='paid':
+                            break
+
         return {
         'name': 'Register Payment',
         'type': 'ir.actions.act_window',
@@ -323,7 +332,7 @@ class hv_batch_invoice(models.Model):
         'key2':'client_action_multi',
         'context': {
                 'active_model': 'account.invoice',
-                'active_ids': [x.id for x in self.invoice_ids],
+                'active_ids': [x.id for x in self.invoice_ids if x.state=='open' and x.type=='out_invoice'],
                 'batch_invoice_id': self.id
                 }
         }

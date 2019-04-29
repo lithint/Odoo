@@ -12,11 +12,15 @@ class hv_credit_limit_product(models.Model):
     _inherit = 'res.partner'
 
     credit_limit = fields.Float(string='Credit Limit', default=0.00)
+    account_manager = fields.Boolean(compute='get_account_manager')
 
     @api.onchange('credit_limit')
     def _rebate_onchange(self):
-        if self.rebate<0:
+        if self.credit_limit<0:
             raise UserError(_('Credit Limit must be greater than 0.'))
+            
+    def get_account_manager(self):
+        self.account_manager = self.user_has_groups('account.group_account_manager')
 
 class hv_credit_limit_sale_order_confirm(models.TransientModel):
     _name = 'sale.order.confirm'
