@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_batch_payment_form_inherit" model="ir.ui.view">
+            <field name="name">hv.account.batch.payment.form.inherit</field>
+            <field name="model">account.batch.payment</field>
+            <field name="inherit_id" ref="account_batch_payment.view_batch_payment_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//button[@name='export_batch_payment']" position="after">
+                    <button name="action_send_remittance_advice" string="SEND REMITTANCE ADVICE" type="object" attrs="{'invisible': ['|', ('file_generation_enabled', '=', False), ('state', '!=', 'sent')]}"/>
+                    <!-- <button name="action_send_remittance_advice" string="SEND REMITTANCE ADVICE" type="object"/> -->
+                </xpath>
+                <xpath expr="//field[@name='payment_ids']" position="inside">
+                    <tree string="Payments" editable="bottom">
+                        <field name="payment_date"/>
+                        <field name="partner_id"/>
+                        <field name="email_vendor"/>
+                        <field name="email_cc"/>
+                        <field name="communication"/>
+                        <field name="amount" sum="Total"/>
+                        <field name="email_send" readonly="1"/>
+                        <field name="payment_reference" readonly="1"/>
+                        <field name="currency_id" invisible="1"/>
+                    </tree>
+                    <form string="Payments">
+                        <group>
+                            <group>
+                                <field name="payment_type" invisible="1"/>
+                                <field name="journal_id" invisible="1"/>
+                                <field name="payment_method_id" invisible="1"/>
+                                <field name="state" invisible="1"/>
+
+                                <field name="partner_type" widget="selection" required="1" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="partner_id" required="1" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <label for="amount"/>
+                                <div>
+                                    <field name="amount" class="oe_inline" required="1" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                    <field name="currency_id" options="{'no_create': True}" groups="base.group_multi_currency" class="oe_inline" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                </div>
+                            </group>
+                            <group>
+                                <field name="payment_date" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="email_vendor"/>
+                                <field name="email_cc"/>
+                                <field name="email_send" readonly="1"/>
+                                <field name="payment_reference" readonly="1"/>
+                                <field name="communication" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="partner_bank_account_id" attrs="{'invisible': [('show_partner_bank_account', '!=', True)], 'required': [('show_partner_bank_account', '=', True)]}" context="{'default_partner_id': partner_id}"/>
+                                <field name="show_partner_bank_account" invisible="1"/>
+                            </group>
+                        </group>
+                    </form>
+                </xpath>
+            </field>
+        </record>
+
+        <template id="report_payment_posted_document">
+            <t t-call="web.external_layout">
+                <t t-set="o" t-value="o.with_context({'lang': lang})"/>
+                <div class="page">
+                    <h3><strong>Payment Receipt: <span t-field="o.name"/></strong></h3>
+                    <div class="row mt64">
+                        <div class="col-6" t-if="o.payment_date">
+                            <strong>Payment Date: </strong> <span t-field="o.payment_date"/>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6" t-if="o.partner_type">
+                            <t t-if="o.partner_type == 'customer'">
+                                <strong>Customer: </strong>
+                            </t>
+                            <t t-if="o.partner_type == 'supplier'">
+                                <strong>Vendor: </strong>
+                            </t><span t-field="o.partner_id"/>
+                        </div>
+                        <div class="col-6" t-if="o.payment_method_id">
+                            <strong>Payment Method: </strong><span t-field="o.payment_method_id.name"/>
+                        </div>
+                    </div>
+                    <div class="row mb64">
+                        <div class="col-6" t-if="o.amount">
+                            <strong>Payment Amount: </strong><span t-field="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                        </div>
+                        <div class="col-6" t-if="o.communication">
+                            <strong>Memo: </strong><span t-field="o.communication"/>
+                        </div>
+                    </div>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th><span>Invoice Date</span></th>
+                                <th><span>Invoice Number</span></th>
+                                <th class="text-right"><span>Original Amount</span></th>
+                                <th class="text-right"><span>Amount Paid</span></th>
+                                <th class="text-right"><span>Balance</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="o.invoice_ids" t-as="inv">
+                                <td><span t-field="inv.date_invoice"/></td>
+                                <td><span t-field="inv.number"/></td>
+                                <td class="text-right"><span t-field="inv.amount_total"/></td>
+                                <td class="text-right"><span t-esc="inv.amount_total - inv.residual" t-options="{'widget': 'monetary', 'display_currency': inv.currency_id}"/></td>
+                                <td class="text-right"><span t-field="inv.residual"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </template>
+
+        <template id="report_payment_posted">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="o">
+                    <t t-set="lang" t-value="o.partner_id.lang"/>
+                    <t t-call="report_payment_posted_document" t-lang="lang"/>
+                </t>
+            </t>
+        </template>
+
+        <report
+            id="action_report_payment_posted"
+            model="account.payment"
+            string="Payment Posted"
+            report_type="qweb-pdf"
+            name="report_payment_posted"
+            file="report_payment_posted"
+        />
+        <!-- attachment="((object.name or '').replace('/','')+'.pdf')" -->
+        <!-- print_report_name="(object._get_report_base_filename())" -->
+        <!-- groups="account.group_account_invoice" -->
+    </data>
+ <data>
+            <!--Email template -->
+        <record id="email_template_batch_payment" model="mail.template">
+            <field name="name">Payment Posted: Send by email</field>
+            <field name="model_id" ref="model_batch_payment_email_send"/>
+            <field name="email_from">${object.create_uid.email_formatted |safe}</field>
+            <!-- <field name="partner_to">${object.partner_id.id}</field> -->
+            <field name="email_to">${object.email_vendor}</field>
+            <field name="email_cc">${object.email_cc}</field>
+            <field name="subject">Payment Notification ${object.payment_ids[0].payment_reference or 'n/a'}</field>
+            <field name="body_html" type="html">
+<div><u></u><u></u><u></u>
+	<table class="m_-4095914086938366884header" style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse">
+		<tbody>
+			<tr>
+				<td style="padding:0px;font-size:10pt">
+					<img src="https://ci5.googleusercontent.com/proxy/kKca2Yb9ZHUXGonBTsBz5H9t4PDZe0WUXaOf7LU04W2YT3nTw5eINKulnwXQjtiV4cqtZyPZMYFFVOa6abLz6-EPwVzBn2Slh3jdEpOUPAZ3I0SqIg5Lvc9lp4m05tMx84LsnMICd7g88jiUTG8=s0-d-e1-ft#https://system.na2.netsuite.com/core/media/media.nl?id=719&amp;c=4514937&amp;h=ff4ba428522156afb694" style="float:left;margin:7px" class="CToWUd"/>
+				</td>
+				<td style="padding:0px;font-size:10pt">
+					<span class="m_-4095914086938366884nameandaddress">
+                    ${user.company_id.name}<br/>
+                    % if user.company_id.street: 
+                        ${user.company_id.street}<br/>
+                    % endif
+                    % if user.company_id.street2: 
+                        ${user.company_id.street2}<br/>
+                    % endif
+                    % if user.company_id.city: 
+                        ${user.company_id.city} 
+                    % endif
+                    % if user.company_id.state_id: 
+                        ${"{} {}".format(user.company_id.state_id.name, user.company_id.zip)}<br/>
+                        ${user.company_id.country_id.name}<br/>
+                    % endif
+					</span>
+				</td>
+				<td align="right" style="padding:0px;font-size:10pt">
+					<span class="m_-4095914086938366884title" style="font-size:26pt">Payment Voucher</span>
+				</td>
+			</tr>
+		</tbody>
+	</table><u></u><u></u>
+	<table class="m_-4095914086938366884footer" style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse">
+		<tbody>
+			<tr>
+				<td align="right" style="padding:0px;font-size:8pt"><u></u><u></u><u></u><u></u></td>
+			</tr>
+		</tbody>
+	</table><u></u><u></u>
+	<table style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse">
+		<tbody>
+			<tr>
+				<td class="m_-4095914086938366884header" style="padding:3px 6px;font-weight:bold;font-size:10pt;vertical-align:middle;text-align:left;color:rgb(12,84,123)">Paid To</td>
+				<td class="m_-4095914086938366884header" style="padding:3px 6px;font-weight:bold;font-size:10pt;vertical-align:middle;text-align:left;color:rgb(12,84,123)">Remittance Note</td>
+				<td class="m_-4095914086938366884totalboxtop" style="padding:4px 6px;font-weight:bold;color:rgb(12,84,123);font-size:12pt;background-color:rgb(207,221,231)">AMOUNT</td>
+			</tr>
+			<tr>
+				<td style="padding:4px 6px;vertical-align:top">
+                    ${object.partner_id.name}<br/>
+                    % if object.partner_id.street: 
+                        ${object.partner_id.street}<br/>
+                    % endif
+                    % if object.partner_id.street2: 
+                        ${object.partner_id.street2}<br/>
+                    % endif
+                    % if object.partner_id.city: 
+                        ${object.partner_id.city} 
+                    % endif
+                    % if object.partner_id.state_id: 
+                        ${"{} ({}) ".format(object.partner_id.state_id.name, object.partner_id.country_id.code)}<br/>
+                        ${object.partner_id.country_id.name}<br/>
+                    % endif
+                </td>
+				<td style="padding:4px 6px;vertical-align:top">Payment will be credited to your bank account after 2 - 3 banking days.</td>
+				<td class="m_-4095914086938366884totalboxmid" style="padding:3px 6px;font-size:28pt;background-color:rgb(207,221,231);text-align:right">${format_amount(object.total, object.currency_id)}</td>
+                
+			</tr>
+		</tbody>
+	</table><br/>
+	<table class="m_-4095914086938366884itemtable" style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse;break-inside:avoid">
+		<tbody>
+			<tr>
+				<th style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123);text-align:left">Reference Number</th>
+				<th style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123);text-align:left">Payment Date</th>
+				<th style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123);text-align:left">Currency</th>
+			</tr>
+			<tr>
+				<td style="padding:4px 6px">${object.payment_ids[0].payment_reference}</td>
+				<td style="padding:4px 6px">${object.date}</td>
+				<td style="padding:4px 6px">${object.currency_id.name}</td>
+			</tr>
+		</tbody>
+	</table><br/>
+	<table class="m_-4095914086938366884itemtable" style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse;break-inside:avoid;height:43px">
+		<thead>
+			<tr>
+				<th align="left" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Date
+				</th>
+				<th align="left" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Description</th>
+				<th align="right" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Due Date</th>
+				<th align="right" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Amount Due</th>
+				<th align="right" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Payment Amount</th>
+			</tr>
+		</thead>
+		<tbody>
+            % if object.payment_ids:
+                % for pay in object.payment_ids:
+                    % for line in pay.invoice_ids:
+                        <tr>
+                            <td align="left" style="padding:4px 6px">${line.date_invoice}</td>
+                            <td align="left" style="padding:4px 6px">${line.number}</td>
+                            <td align="right" style="padding:4px 6px">${line.date_due}</td>
+                            <td align="right" style="padding:4px 6px">${format_amount(line.amount_total_signed, line.currency_id)}</td>
+                            <td align="right" style="padding:4px 6px">${format_amount(pay.amount, pay.currency_id)}</td>
+                        </tr>
+                    % endfor
+                % endfor
+            % endif
+			<tr>
+				<td colspan="3" style="padding:4px 6px"></td>
+				<td class="m_-4095914086938366884totalcell" style="padding:4px 6px;font-size:10pt;font-weight:bold;color:rgb(12,84,123);background-color:rgb(207,221,231);text-align:right">Amount</td>
+				<td class="m_-4095914086938366884totalcell" style="padding:4px 6px;font-size:10pt;font-weight:bold;color:rgb(12,84,123);background-color:rgb(207,221,231);text-align:right">${format_amount(object.total, object.currency_id)}</td>
+			</tr>
+		</tbody>
+	</table><br/><br/>
+	<table style="font-family:sans-serif;font-size:9pt;margin-top:10px;table-layout:fixed;width:100%;border-collapse:collapse">
+		<tbody>
+			<tr>
+				<td style="padding:4px 6px">
+                    ${"For inquiries, please call PH: {} or email ".format(user.company_id.phone)}
+					<a href="mailto:account@gentecaustralia.com.au" target="_blank">${user.company_id.email}</a>
+				</td>
+			</tr>
+		</tbody>
+	</table><u></u>
+</div>
+
+            </field>
+            <!-- <field name="report_template" ref="hv_send_remittance_advice.action_report_payment_posted"/>
+            <field name="report_name">Payment_${(object.name or '').replace('/','-')}</field> -->
+            <field name="lang">${object.partner_id.lang}</field>
+            <field name="auto_delete" eval="True"/>
+            <field name="user_signature" eval="False"/>
+        </record>
+    </data>
+<!-- <div>
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Dear ${object.partner_id.name}
+        % if object.partner_id.parent_id:
+            (${object.partner_id.parent_id.name})
+        % endif
+        <br /><br />
+        Here is your 
+        % if object.name:
+            Payment <strong>${object.name}</strong>
+        % else:
+            Payment
+        %endif
+        amounting in <strong>${format_amount(object.amount, object.currency_id)}</strong>
+        from ${object.company_id.name}.
+        % if object.state=='posted':
+            This Payment is already posted.
+        % else:
+            Please remit payment at your earliest convenience.
+        % endif
+        <br /><br />
+        Do not hesitate to contact us if you have any question.
+        <br/><br/>
+        Best regards,<br/>
+        % if user and user.signature:
+        ${user.signature | safe}
+        % endif
+    </p>
+</div> -->
+</odoo>
