@@ -78,6 +78,56 @@ class hv_account_payment(models.Model):
         if self._context.get('batch_payment_id'):
             vals.update({'email_vendor': self.env['res.partner'].browse(vals.get('partner_id')).email})
         return super(hv_account_payment, self).create(vals)
+    
+    def preview_payments(self):
+        default_template = self.env.ref('hv_send_remittance_advice.email_template_batch_payment', False)    
+        vendor = {self.partner_id.id:{
+            'partner_id': self.partner_id.id,
+            'email_vendor': self.email_vendor,
+            'email_cc': self.email_cc,
+            'payment_ids':[self.id]
+        }}
+        if self.batch_payment_id.payment_ids:
+            for item in self.batch_payment_id.payment_ids:
+                if  vendor.get(item.partner_id.id):
+                    if not vendor[item.partner_id.id]['email_vendor']:
+                        vendor[item.partner_id.id]['email_vendor'] = item.email_vendor
+                    if not vendor[item.partner_id.id]['email_cc']:
+                        vendor[item.partner_id.id]['emal_cc'] = item.email_cc
+                    vendor[item.partner_id.id]['payment_ids'].append(item.id) 
+        for item in vendor:
+            batch = self.env['batch.payment.email.send'].create({
+                'name': self.batch_payment_id.name,
+                'date': self.batch_payment_id.date,
+                'currency_id': self.batch_payment_id.currency_id.id,
+                'partner_id': vendor[item]['partner_id'],
+                'email_vendor': vendor[item]['email_vendor'],
+                'email_cc': vendor[item]['email_cc'],
+                'payment_ids':[(6, 0, vendor[item]['payment_ids'])]
+            })
+            break  
+        ctx = dict(
+            active_model='batch.payment.email.send',
+            active_id=batch.id,
+            default_model='batch.payment.email.send',
+            default_res_id=batch.id,
+            default_use_template=bool(default_template),
+            default_template_id=default_template and default_template.id or False,
+            default_composition_mode='comment',
+            force_email = True,
+            )
+        return {
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'mail.compose.message',
+            'views': [(self.env.ref('mail.email_compose_message_wizard_form').id, 'form')],
+            'view_id': self.env.ref('mail.email_compose_message_wizard_form').id,
+            'target': 'new',
+            # 'res_id': wizard_mail.id,
+            'context': ctx,
+
+        }
 
 class hv_batch_email_send_abs(models.AbstractModel):
     _name = "batch.payment.email.send.abstract"
@@ -107,8 +157,8 @@ class hv_batch_email_send(models.TransientModel):
 class hv_account_batch_payment(models.Model):
     _inherit = 'account.batch.payment'
 
-    payment_ids = fields.One2many('account.payment', 'batch_payment_id', string="Payments", required=False,  readonly=True, states={'draft': [('readonly', False)]})
-
+    payment_ids = fields.One2many('account.payment', 'batch_payment_id', string="Payments", required=False, readonly=False)
+    
     @api.constrains('batch_type', 'journal_id', 'payment_ids')
     def _check_payments_constrains(self):
         for record in self:
@@ -219,3 +269,9 @@ class hv_account_batch_payment(models.Model):
                 pid.email_send += 1
         return self.env['havi.message'].action_warning('Send remittance advice completed.','Send Remittance Advice')
 
+    def cancel_payments(self):
+        if self.payment_ids:
+            self.payment_ids.cancel()
+            self.payment_ids = [(5, 0, 0)]
+        return self.env['havi.message'].action_warning('Payments cancel is completed.','Payments Cancel')
+    

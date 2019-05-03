@@ -83,6 +83,13 @@ class hv_batch_invoice_product(models.Model):
         if self.rebate>100 or self.rebate<0:
             raise UserError(_('Rebate value range must be in (0, 100).'))
 
+    @api.multi
+    def name_get(self):
+        res = []
+        for partner in sorted(self, key=lambda partner: partner.parent_id, reverse=False):
+            name = partner._get_name()
+            res.append((partner.id, name))
+        return res
 
 class hv_batch_invoice_writeoff(models.Model):
     _name = 'batch.account.writeoff'
