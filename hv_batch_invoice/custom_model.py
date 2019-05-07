@@ -84,13 +84,13 @@ class hv_batch_res_partner(models.Model):
         if self.rebate>100 or self.rebate<0:
             raise UserError(_('Rebate value range must be in (0, 100).'))
 
-    # @api.multi
-    # def name_get(self):
-    #     res = []
-    #     for partner in sorted(self, key=lambda partner: partner.parent_id, reverse=False):
-    #         name = partner._get_name()
-    #         res.append((partner.id, name))
-    #     return res
+    @api.multi
+    def name_get(self):
+        res = []
+        for partner in sorted(self, key=lambda partner: partner.parent_id, reverse=False):
+            name = partner._get_name()
+            res.append((partner.id, name))
+        return res
 
 class hv_batch_invoice_writeoff(models.Model):
     _name = 'batch.account.writeoff'
@@ -140,7 +140,7 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
     def _compute_rest(self):
         self.payment_difference_rest = abs(self.payment_difference)
         for wof in self.writeoff_account_ids:
-            self.payment_difference_rest -= wof.amount
+            self.payment_difference_rest -= self.currency_id.round(wof.amount)
 
     @api.onchange('currency_id')
     def _onchange_currency(self):
@@ -149,10 +149,10 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
             self.amount -= self.currency_id.round(self.amount * self.partner_id.rebate / 100)
         return res
 
-    @api.onchange('writeoff_account_ids', 'payment_difference')
-    def _writeoff_account_ids_onchange(self):
-        if self.payment_difference_rest < 0:
-            raise UserError(_('Total Amount value cannot greater than Payment rest value.'))
+    # @api.onchange('writeoff_account_ids', 'payment_difference')
+    # def _writeoff_account_ids_onchange(self):
+    #     if self.payment_difference_rest < 0:
+    #         raise UserError(_('Total Amount value cannot greater than Payment rest value.'))
             
 class hv_batch_invoice_account_register_payment(models.TransientModel):
     _inherit = "account.register.payments"
@@ -176,7 +176,7 @@ class hv_batch_invoice_account_register_payment(models.TransientModel):
 
     @api.multi
     def create_payments(self):
-        if self._context.get('batch_invoice_id') and self.payment_difference_rest != 0 and self.payment_difference_handling == 'reconcile':
+        if self._context.get('batch_invoice_id') and self.currency_id.round(self.payment_difference_rest) != 0 and self.payment_difference_handling == 'reconcile':
             raise UserError(_('Payment rest value must be 0.'))
         action_vals = super(hv_batch_invoice_account_register_payment, self).create_payments()
        
@@ -286,7 +286,7 @@ class hv_batch_invoice(models.Model):
 
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
-        res = {'domain': {'invoice_ids': ['|', ('partner_id', '=', self.customer_id.id),('partner_id.parent_id', '=', self.customer_id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
+        res = {'domain': {'invoice_ids': ['|', ('partner_id', '=', self.customer_id.id),('partner_id.parent_id', '=', self.customer_id.id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
         if not self.customer_id:
             res = {'domain': {'invoice_ids': [('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
         if self.customer_id != self._origin.customer_id and self.invoice_ids:
