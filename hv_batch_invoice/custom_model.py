@@ -73,8 +73,9 @@ MAP_INVOICE_TYPE_PAYMENT_SIGN = {
 }
 
 
-class hv_batch_invoice_product(models.Model):
+class hv_batch_res_partner(models.Model):
     _inherit = 'res.partner'
+    _order = "parent_id desc, display_name"
 
     rebate = fields.Float(string='Rebate %', digits= (3,1), default=0.0)
 
@@ -83,13 +84,13 @@ class hv_batch_invoice_product(models.Model):
         if self.rebate>100 or self.rebate<0:
             raise UserError(_('Rebate value range must be in (0, 100).'))
 
-    @api.multi
-    def name_get(self):
-        res = []
-        for partner in sorted(self, key=lambda partner: partner.parent_id, reverse=False):
-            name = partner._get_name()
-            res.append((partner.id, name))
-        return res
+    # @api.multi
+    # def name_get(self):
+    #     res = []
+    #     for partner in sorted(self, key=lambda partner: partner.parent_id, reverse=False):
+    #         name = partner._get_name()
+    #         res.append((partner.id, name))
+    #     return res
 
 class hv_batch_invoice_writeoff(models.Model):
     _name = 'batch.account.writeoff'
@@ -285,8 +286,9 @@ class hv_batch_invoice(models.Model):
 
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
-        # res = {'domain': {'invoice_ids': [('partner_id', '=', self.customer_id.id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
-        res = {}
+        res = {'domain': {'invoice_ids': ['|', ('partner_id', '=', self.customer_id.id),('partner_id.parent_id', '=', self.customer_id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
+        if not self.customer_id:
+            res = {'domain': {'invoice_ids': [('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
         if self.customer_id != self._origin.customer_id and self.invoice_ids:
             self.invoice_ids = [(6, 0, [])]
             warning = {

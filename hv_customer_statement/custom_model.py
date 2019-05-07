@@ -50,17 +50,6 @@ OPTIONS = {
     'advanced': False, 
     'bank_stmt_import': True, 'date_format': '', 'datetime_format': '', 'encoding': 'ascii', 'fields': [], 'float_decimal_separator': '.', 'float_thousand_separator': ',', 'headers': True, 'keep_matches': False, 'name_create_enabled_fields': {'currency_id': False, 'partner_id': False}, 'quoting': '"', 'separator': ','}
 
-class hv_customer(models.Model):
-    _inherit = 'res.partner'
-    
-    @api.multi
-    def name_get(self):
-        res = []
-        for partner in sorted(self, key=lambda partner: partner.parent_id, reverse=False):
-            name = partner._get_name()
-            res.append((partner.id, name))
-        return res
-
 class hv_customer_account_invoice(models.Model):
     _inherit = 'account.invoice'
 
@@ -102,6 +91,8 @@ class hv_customer_statement_line(models.Model):
     ]
 
     def get_consolidatedsm(self):
+        if not self._context.get('default_statement_id'):
+            return True
         return self.env['hv.customer.statement'].browse(self._context.get('default_statement_id')).consolidatedsm
 
     @api.onchange('customer_id')

@@ -280,8 +280,8 @@
                                     <tree string="Customers" editable="bottom" >
                                         <field name="customer_id" attrs="{'readonly': [('consolidatedsm','=',False)]}"/>
                                         <field name="email_address"/>
-                                        <field name="balance"/>
-                                        <field name="overdue"/>
+                                        <field name="balance" sum="Total"/>
+                                        <field name="overdue" sum="Total"/>
                                         <field name="email_send"/>
                                         <field name="consolidatedsm" invisible="1"/>
                                         <button name="print_customer_statement" type="object" string="print" class="oe_highlight"/>
