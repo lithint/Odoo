@@ -162,8 +162,8 @@
                         <thead>
                             <tr style="color: #FFF; font-family:Arial, sans-serif; font-style: normal; font-weight: bold; text-decoration: none; font-size: 10pt;background-color: #666666;">
                                 <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >PO No.</td>
+                                <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Invoice No.</td>
                                 <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Date</td>
-                                <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Print Date</td>
                                 <td style="width:150pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Description</td>
                                 <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Amount</td>
                                 <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" >Applied</td>
@@ -175,8 +175,8 @@
                             <t t-set="line_bal" t-value="0"/>
                             <tr style="color: black; font-family:Arial, sans-serif; font-style: normal; font-weight: normal; text-decoration: none; font-size: 10pt;background-color: white;" t-foreach="o.invoice_ids" t-as="inv">
                                 <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.client_order_ref"/></td>
+                                <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.number"/></td>
                                 <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-field="inv.date_invoice"/></td>
-                                <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ></td>
                                 <td style="width:150pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-field="inv.name"/></td>
                                 <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.amount_total_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
                                 <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.amount_total_signed-inv.residual_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
@@ -252,6 +252,7 @@
                 <form string="Customer Statment Form View">
                     <header>
                         <!-- <button name="print_customer_statement" type="object" string="Print" class="btn-primary" attrs="{'invisible': [('line_ids','=',[])]}"/> -->
+                        <button name="set_consolidated" type="object" string="Consolidated Swap" class="btn-primary"/>
                         <button name="send_mail_customer_statement" type="object" string="Send Email" class="btn-primary" attrs="{'invisible': [('line_ids','=',[])]}"/>
                     </header>
                     <sheet>
@@ -267,32 +268,50 @@
                                 <field name="consolidatedsm"/>
                             </group>
                         </group>
+                        <!-- <notebook attrs="{'invisible': [('consolidatedsm','=',False)]}"> -->
                         <notebook>
                             <page string="Customer Lines">
                                 <field 
                                     name="line_ids" 
                                     widget="section_and_note_one2many"
                                     mode="tree,form"
-                                    context="{'default_invoice_id': id}"
+                                    context="{'default_statement_id': id, 'default_line_ids': line_ids}"
                                 >
-                                    <tree string="Customers" editable="bottom">
-                                        <field name="customer_id"  domain="[('customer', '=', True)]"/>
+                                    <tree string="Customers" editable="bottom" >
+                                        <field name="customer_id" attrs="{'readonly': [('consolidatedsm','=',False)]}"/>
                                         <field name="email_address"/>
                                         <field name="balance"/>
                                         <field name="overdue"/>
-                                        <!-- <field name="invoice_ids"/> -->
                                         <field name="email_send"/>
+                                        <field name="consolidatedsm" invisible="1"/>
                                         <button name="print_customer_statement" type="object" string="print" class="oe_highlight"/>
                                     </tree>
-                                    <form string="Customers" readonly="1">
+                                    <form string="Customers">
                                         <sheet>
                                             <group>
                                                 <field name="customer_id"/>
                                                 <field name="email_address"/>
                                                 <field name="balance"/>
                                                 <field name="overdue"/>
-                                                <field name="email_send"/> 
-                                                <field name="invoice_ids" invisible="1"/>     
+                                                <field name="email_send"/>
+                                                <field name="consolidatedsm" invisible="1"/>
+                                                <field 
+                                                    name="child_ids" 
+                                                    widget="section_and_note_one2many"
+                                                    mode="tree"
+                                                    context="{'default_statement_id': id}"
+                                                    invisible="1"
+                                                >
+                                                    <tree string="Customers" editable="bottom">
+                                                        <field name="customer_id" readonly="1"/>
+                                                        <field name="email_address"/>
+                                                        <field name="balance"/>
+                                                        <field name="overdue"/>
+                                                        <field name="email_send"/>
+                                                        <button name="print_customer_statement" type="object" string="print" class="oe_highlight"/>
+                                                    </tree>
+                                                </field>
+                                                <field name="invoice_ids" invisible="1"/>    
                                             </group>
                                         </sheet>
                                     </form>
