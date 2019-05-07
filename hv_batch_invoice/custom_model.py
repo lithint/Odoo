@@ -145,8 +145,11 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
     @api.onchange('currency_id')
     def _onchange_currency(self):
         res = super(hv_batch_invoice_account_abstract_payment, self)._onchange_currency()
-        if self._context.get('batch_invoice_id') and self.partner_id.rebate:
-            self.amount -= self.currency_id.round(self.amount * self.partner_id.rebate / 100)
+        if 'rebate' in self.partner_id._fields:
+            if self._context.get('batch_invoice_id'):
+                batch = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
+                if batch.rebatepercent:
+                    self.amount -= self.currency_id.round(self.amount * batch.rebatepercent / 100)
         return res
 
     # @api.onchange('writeoff_account_ids', 'payment_difference')
@@ -160,8 +163,11 @@ class hv_batch_invoice_account_register_payment(models.TransientModel):
     @api.onchange('journal_id')
     def _onchange_journal(self):
         res = super(hv_batch_invoice_account_register_payment, self)._onchange_journal()
-        if self._context.get('batch_invoice_id')and self.partner_id.rebate:
-            self.amount -= self.currency_id.round(self.amount * self.partner_id.rebate / 100)
+        if 'rebate' in self.partner_id._fields:
+            if self._context.get('batch_invoice_id'):
+                batch = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
+                if batch.rebatepercent:
+                    self.amount -= self.currency_id.round(self.amount * batch.rebatepercent / 100)
         return res
 
     @api.multi
@@ -275,20 +281,43 @@ class hv_batch_invoice(models.Model):
 
     name = fields.Char(string='Batch Name', required=True)
     customer_id = fields.Many2one('res.partner', string='Customer', help="Filter open invoices by selected customer.", domain=[('customer', '=', True)])
-    invoice_ids = fields.Many2many('account.invoice','batch_account_invoice_rel', 'batch_id', 'invoice_id', string='Add Invoices to Batch')
+    invoice_ids_domain = fields.Many2many('account.invoice','batch_account_invoice_rel', 'batch_id', 'invoice_id', string='Add Invoices to Batch', compute='get_domain')
+    invoice_ids = fields.Many2many('account.invoice','batch_account_invoice_rel', 'batch_id', 'invoice_id', string='Add Invoices to Batch',)
+
     state = fields.Selection([('draft', 'Draft'), ('open', 'Open'), ('run', 'Registered')], readonly=True, default='draft', copy=False, string="Status")
     total = fields.Float(string='Total Amount', readonly=True, compute='_compute_total', store=True)
     rebate = fields.Float(string='Rebate Amount', readonly=True, compute='_compute_total', store=True)
-    rebatepercent = fields.Float(string='Rebate %', digits= (3,1), readonly=True, compute='_compute_total', store=True)
+    rebatepercent = fields.Float(string='Rebate %', digits= (3,1), readonly=True)
 
     import_ids = fields.One2many('batch.invoice.import.result', 'batch_id')
     payment_ids = fields.One2many('account.abstract.payment', 'batch_invoice_id')
 
+    @api.one
+    @api.depends('customer_id')
+    def get_domain(self):
+        if self.customer_id:
+            iv = self.env['account.invoice'].search(
+                [
+                ('state', '=', 'open'),
+                ('type', 'in', ['out_invoice', 'out_refund']),
+                '|' , ('partner_id.id', '=', self.customer_id.id),
+                ('partner_id.parent_id.id', '=', self.customer_id.id)
+                ])
+        else:
+            iv = self.env['account.invoice'].search(
+                [('state', '=', 'open'),
+                 ('type', 'in', ['out_invoice', 'out_refund'])
+                ])
+        
+        self.invoice_ids_domain = [i.id for i in iv]
+        return True
+
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
-        res = {'domain': {'invoice_ids': ['|', ('partner_id', '=', self.customer_id.id),('partner_id.parent_id', '=', self.customer_id.id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
-        if not self.customer_id:
-            res = {'domain': {'invoice_ids': [('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
+        # res = {'domain': {'invoice_ids': ['|', ('partner_id', '=', self.customer_id.id),('partner_id.parent_id', '=', self.customer_id.id),, ('type', 'in', ['out_invoice', 'out_refund'])]}}
+        # if not self.customer_id:
+        #     res = {'domain': {'invoice_ids': [('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]}}
+        res = {}
         if self.customer_id != self._origin.customer_id and self.invoice_ids:
             self.invoice_ids = [(6, 0, [])]
             warning = {
@@ -296,19 +325,19 @@ class hv_batch_invoice(models.Model):
             'message': 'Once change customer, your selected invoices will be remove.'
             }
             res.update({'warning': warning})
-        return res
+            return res
 
     @api.one
     @api.depends('invoice_ids', 'customer_id')
     def _compute_total(self):
         if self.state == 'draft':
-            self.rebatepercent = self.customer_id.rebate
+            self.rebatepercent = self.customer_id.parent_id.rebate or self.customer_id.rebate
             self.total = 0.0
             self.rebate = 0.0
             if self.invoice_ids:
                 self.total = sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.residual_signed for i in self.invoice_ids])
                 # self.rebate += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.amount_total_signed for i in self.invoice_ids])
-                self.rebate = self.invoice_ids[0].currency_id.round(self.total * self.customer_id.rebate / 100)                
+                self.rebate = self.invoice_ids[0].currency_id.round(self.total * self.rebatepercent / 100)          
 
     def action_confirm(self):
         return self.write({'state': 'open'})
