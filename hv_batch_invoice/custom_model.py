@@ -105,7 +105,7 @@ class hv_batch_invoice_writeoff(models.Model):
     
     @api.onchange('amount')
     def _amount_onchange(self):
-        if self.amount==0:
+        if self.amount==0:  
             self.amount = self.payment_id.payment_difference_rest
 
 class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
@@ -120,8 +120,6 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
     def _onchange_pack_id(self):
         if not self.pack_id:
             return
-        if self._origin.pack_id and self.pack_id.id == self._origin.pack_id.id:
-            return
         if self.writeoff_account_ids:
             self.writeoff_account_ids = [(5,)]
 
@@ -131,16 +129,20 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
                 wo = self.writeoff_account_ids.create({
                     'writeoff_account_id': l.account_id.id,
                     'amount': self.currency_id.round(self.payment_difference_rest/l.ratio),
-                    'payment_id': self.id
+                    'payment_id': self.id,
+                    'writeoff_label': l.descritption
+                    
                 })
                 lid.append(wo.id)
             self.writeoff_account_ids = [(6, 0, lid)]
+
     @api.one
     @api.depends('writeoff_account_ids', 'payment_difference')
     def _compute_rest(self):
         self.payment_difference_rest = abs(self.payment_difference)
         for wof in self.writeoff_account_ids:
-            self.payment_difference_rest -= self.currency_id.round(wof.amount)
+            self.payment_difference_rest -= wof.amount
+        self.payment_difference_rest = abs(self.payment_difference_rest)
 
     @api.onchange('currency_id')
     def _onchange_currency(self):
@@ -148,6 +150,7 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
         if 'rebate' in self.partner_id._fields:
             if self._context.get('batch_invoice_id'):
                 batch = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
+                batch.rebatepercent = batch.customer_id.parent_id.rebate or batch.customer_id.rebate
                 if batch.rebatepercent:
                     self.amount -= self.currency_id.round(self.amount * batch.rebatepercent / 100)
         return res
@@ -166,6 +169,8 @@ class hv_batch_invoice_account_register_payment(models.TransientModel):
         if 'rebate' in self.partner_id._fields:
             if self._context.get('batch_invoice_id'):
                 batch = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
+                batch.rebatepercent = batch.customer_id.parent_id.rebate or batch.customer_id.rebate
+
                 if batch.rebatepercent:
                     self.amount -= self.currency_id.round(self.amount * batch.rebatepercent / 100)
         return res
@@ -287,11 +292,23 @@ class hv_batch_invoice(models.Model):
     state = fields.Selection([('draft', 'Draft'), ('open', 'Open'), ('run', 'Registered')], readonly=True, default='draft', copy=False, string="Status")
     total = fields.Float(string='Total Amount', readonly=True, compute='_compute_total', store=True)
     rebate = fields.Float(string='Rebate Amount', readonly=True, compute='_compute_total', store=True)
-    rebatepercent = fields.Float(string='Rebate %', digits= (3,1), readonly=True)
+    rebatepercent = fields.Float(string='Rebate %', digits= (3,1), readonly=True, compute='_compute_total', store=True)
 
     import_ids = fields.One2many('batch.invoice.import.result', 'batch_id')
     payment_ids = fields.One2many('account.abstract.payment', 'batch_invoice_id')
-
+    
+    @api.one
+    @api.depends('invoice_ids','customer_id')
+    def _compute_total(self):
+        if self.state == 'draft':
+            self.rebatepercent = self.customer_id.parent_id.rebate or self.customer_id.rebate
+            self.total = 0.0
+            self.rebate = 0.0
+            if self.invoice_ids:
+                self.total = sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.residual_signed for i in self.invoice_ids])
+                # self.rebate += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.amount_total_signed for i in self.invoice_ids])
+                self.rebate = self.invoice_ids[0].currency_id.round(self.total * self.rebatepercent / 100)   
+    
     @api.one
     @api.depends('customer_id')
     def get_domain(self):
@@ -325,19 +342,7 @@ class hv_batch_invoice(models.Model):
             'message': 'Once change customer, your selected invoices will be remove.'
             }
             res.update({'warning': warning})
-            return res
-
-    @api.one
-    @api.depends('invoice_ids', 'customer_id')
-    def _compute_total(self):
-        if self.state == 'draft':
-            self.rebatepercent = self.customer_id.parent_id.rebate or self.customer_id.rebate
-            self.total = 0.0
-            self.rebate = 0.0
-            if self.invoice_ids:
-                self.total = sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.residual_signed for i in self.invoice_ids])
-                # self.rebate += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.amount_total_signed for i in self.invoice_ids])
-                self.rebate = self.invoice_ids[0].currency_id.round(self.total * self.rebatepercent / 100)          
+            return res       
 
     def action_confirm(self):
         return self.write({'state': 'open'})
@@ -496,6 +501,7 @@ class PackRebateLine(models.Model):
     _name = "pack.rebate.line"
 
     account_id = fields.Many2one('account.account', string='Account', required=True)
+    descritption = fields.Char(string='Description')
     ratio = fields.Float(string='Ratio /', digits= (3,1), default=0.0)
     pack_id = fields.Many2one('pack.rebate')
 

@@ -18,6 +18,7 @@
                                 >
                                     <tree editable="bottom" >
                                         <field name="account_id"/>
+                                        <field name="descritption"/>
                                         <field name="ratio"/>
                                     </tree>
                                 </field>
@@ -147,7 +148,7 @@
             <field name="arch" type="xml">
                 <tree string="Batch account writeoff view">
                     <field name="writeoff_account_id"/>
-                    <field name="amount"/>
+                    <field name="amount" sum="Total Amount"/>
                     <field name="writeoff_label"/>
                 </tree>
             </field>
@@ -251,6 +252,7 @@
                     <field name="customer_id"/>
                     <field name="total"/>
                     <field name="rebate"/>
+                    <field name="rebatepercent"/>
                     <field name="state"/>
                 </tree>
             </field>
