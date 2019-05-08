@@ -82,6 +82,7 @@ class hv_customer_statement_line(models.Model):
     overdue = fields.Float(string='Overdue', readonly=True, compute='_compute_values')
     statement_id = fields.Many2one('hv.customer.statement')
     email_send = fields.Integer(string = 'Send Times', default=0, readonly=True)
+    send_check = fields.Boolean(string='Send', default=False)
     parent_id = fields.Many2one('hv.customer.statement.line', index=True, ondelete='cascade')
     child_ids = fields.One2many('hv.customer.statement.line','parent_id', index=True, ondelete='cascade')
     consolidatedsm = fields.Boolean(default=lambda self: self.get_consolidatedsm())
@@ -119,6 +120,10 @@ class hv_customer_statement_line(models.Model):
 
     def search_invoice(self):
         if self.customer_id:
+            start_date = self.statement_id.start_date
+            statement_date = self.statement_id.statement_date
+            if start_date == statement_date:
+                start_date = start_date - timedelta(days=3650)
             query = """
                         SELECT ac.id, right(ac.number,5) number, right(ac.number,5) number1
                             FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
@@ -126,13 +131,17 @@ class hv_customer_statement_line(models.Model):
                                 and ac.type in ('out_invoice','out_refund') 
                                 and ac.date_invoice >= '%s' and ac.date_invoice <= '%s'
                                 and (pa.id = %s)
-                                """ % (self.parent_id.statement_id.start_date, self.parent_id.statement_id.statement_date + timedelta(days=1), self.customer_id.id)
+                                """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
 
 
     def search_all_invoice(self):
         if self.customer_id:
+            start_date = self.statement_id.start_date
+            statement_date = self.statement_id.statement_date
+            if start_date == statement_date:
+                start_date = start_date - timedelta(days=3650)
             query = """
                         SELECT ac.id, right(ac.number,5) number, right(ac.number,5) number1
                             FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
@@ -140,7 +149,7 @@ class hv_customer_statement_line(models.Model):
                                 and ac.type in ('out_invoice','out_refund') 
                                 and ac.date_invoice >= '%s' and ac.date_invoice <= '%s'
                                 and (pa.id = %s or pa.parent_id = %s)
-                                """ % (self.statement_id.start_date, self.statement_id.statement_date + timedelta(days=1), self.customer_id.id, self.customer_id.id)
+                                """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, self.customer_id.id)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
 
@@ -162,7 +171,7 @@ class hv_customer_statement(models.Model):
     showonlyopen = fields.Boolean(string='Show Only Open Transaction', default=False)
     consolidatedsm = fields.Boolean(string='Consolidated Statement', default=True, readonly=True)
     
-    line_ids = fields.One2many('hv.customer.statement.line', 'statement_id', string='Customers', domain=lambda self: [('consolidatedsm', '=', self.consolidatedsm)] )
+    line_ids = fields.One2many('hv.customer.statement.line', 'statement_id', string='Customers', domain=lambda self: [('consolidatedsm', '=', self.consolidatedsm)])
 
     def set_consolidated(self):
         if self.consolidatedsm:
@@ -198,10 +207,52 @@ class hv_customer_statement(models.Model):
                             'consolidatedsm': False,
                         })        
         # return self.env['havi.message'].action_warning('General Details was completed', 'Customer Statement')
+    
+    def partner_by_invoice(self):
+        if self.statement_date and self.consolidatedsm:
+            start_date = self.start_date
+            statement_date = self.statement_date
+            if start_date == statement_date:
+                start_date = start_date - timedelta(days=3650)
+            query = """
+                        select id, email,1 from res_partner where id in
+                        (select COALESCE(pa.parent_id,pa.id)
+                            FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
+                            where ac.state = 'open' 
+                                and ac.type in ('out_invoice','out_refund') 
+                                and ac.date_invoice >= '%s' and ac.date_invoice <= '%s')
+                                """ % (start_date, statement_date + timedelta(days=1))
+            partner_ids = self.env['account.invoice']._search_id(query)
+            for l in self.line_ids:
+                if not l.consolidatedsm:
+                    continue
+                ex = False
+                for dt in partner_ids:
+                    if l.customer_id.id == dt[0]:
+                        ex = True
+                        break
+                if not ex:
+                    l.unlink()
+
+            for item in partner_ids:
+                ex = False
+                for dt in self.line_ids:
+                    if item[0] == dt.customer_id.id:
+                        ex = True
+                        break
+                if not ex:
+                    self.env['hv.customer.statement.line'].create({
+                        'customer_id': item[0],
+                        'email_address': item[1],
+                        'statement_id': self.id,
+                        'consolidatedsm': True,
+                    })   
 
     def send_mail_customer_statement(self):
         default_template = self.env.ref('hv_customer_statement.email_template_customer_statement', False) 
         for item in self.line_ids:
+            if not item.send_check:
+                continue
             if self.consolidatedsm:
                 item.search_all_invoice()
             else:

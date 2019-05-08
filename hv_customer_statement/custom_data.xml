@@ -271,17 +271,20 @@
                         <!-- <notebook attrs="{'invisible': [('consolidatedsm','=',False)]}"> -->
                         <notebook>
                             <page string="Customer Lines">
+                                <button name="partner_by_invoice" type="object" string="Update Partner List" class="btn-primary" attrs="{'invisible': [('consolidatedsm','=',False)]}"/>
                                 <field 
                                     name="line_ids" 
                                     widget="section_and_note_one2many"
                                     mode="tree,form"
                                     context="{'default_statement_id': id, 'default_line_ids': line_ids}"
                                 >
-                                    <tree string="Customers" editable="bottom" >
-                                        <field name="customer_id" attrs="{'readonly': [('consolidatedsm','=',False)]}"/>
+                                    <tree string="Customers" editable="bottom" create="false">
+                                        <!-- <field name="customer_id" attrs="{'readonly': [('consolidatedsm','=',False)]}"/> -->
+                                        <field name="customer_id" readonly="1"/>
                                         <field name="email_address"/>
                                         <field name="balance" sum="Total"/>
                                         <field name="overdue" sum="Total"/>
+                                        <field name="send_check"/>
                                         <field name="email_send"/>
                                         <field name="consolidatedsm" invisible="1"/>
                                         <button name="print_customer_statement" type="object" string="print" class="oe_highlight"/>

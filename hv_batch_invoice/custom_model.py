@@ -163,6 +163,28 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
 class hv_batch_invoice_account_register_payment(models.TransientModel):
     _inherit = "account.register.payments"
 
+    @api.model
+    def create(self, vals):
+        return super(hv_batch_invoice_account_register_payment, self).create(vals)
+
+    @api.multi
+    def write(self, vals):
+        return super(hv_batch_invoice_account_register_payment, self).write(vals)
+
+    @api.model
+    def default_get(self, fields):
+        rec = super(hv_batch_invoice_account_register_payment, self).default_get(fields)
+        if 'rebate' in self.partner_id._fields:
+            if self._context.get('batch_invoice_id'):
+                batch = self.env['batch.invoice'].browse(self._context.get('batch_invoice_id'))
+                batch.rebatepercent = batch.customer_id.parent_id.rebate or batch.customer_id.rebate
+                if batch.rebatepercent:
+                    currency = self.env['res.currency'].browse(rec['currency_id'])
+                    amount = currency.round(rec['amount'] * batch.rebatepercent / 100)
+                    rec.update({
+                        'amount': abs(rec['amount'] - amount),
+                    })
+        return rec
     @api.onchange('journal_id')
     def _onchange_journal(self):
         res = super(hv_batch_invoice_account_register_payment, self)._onchange_journal()
@@ -361,23 +383,21 @@ class hv_batch_invoice(models.Model):
                         cn.assign_outstanding_credit(lines.id)
                         if cn.state =='paid':
                             break
-
+        ctx = {
+            'active_model': 'account.invoice',
+            'active_ids': [x.id for x in self.invoice_ids if x.state=='open' and x.type=='out_invoice'],
+            'batch_invoice_id': self.id
+            }
         return {
         'name': 'Register Payment',
         'type': 'ir.actions.act_window',
         'view_type': 'form',
         'view_mode': 'form',
         'res_model': 'account.register.payments',
-        'src_model': 'account.invoice',
-        'multi': True,
+        # 'multi': True,
         'view_id': self.env.ref('hv_batch_invoice.view_account_payment_from_invoices').id,
         'target': 'new',
-        'key2':'client_action_multi',
-        'context': {
-                'active_model': 'account.invoice',
-                'active_ids': [x.id for x in self.invoice_ids if x.state=='open' and x.type=='out_invoice'],
-                'batch_invoice_id': self.id
-                }
+        'context': ctx
         }
         
     def import_statement(self):
