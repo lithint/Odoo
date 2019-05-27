@@ -172,11 +172,25 @@ class hv_customer_statement(models.Model):
     consolidatedsm = fields.Boolean(string='Consolidated Statement', default=True, readonly=True)
     
     line_ids = fields.One2many('hv.customer.statement.line', 'statement_id', string='Customers', domain=lambda self: [('consolidatedsm', '=', self.consolidatedsm)])
+    selectall = fields.Boolean(default=False, compute="check_select")
+    
+    @api.depends("consolidatedsm")
+    def check_select(self):
+        self.selectall = True
+        for l in self.line_ids:
+            if not l.send_check:
+                self.selectall = False
+                break
 
     def set_consolidated(self):
         if self.consolidatedsm:
             self.get_detail()
         self.consolidatedsm = not self.consolidatedsm
+    
+    def select_all(self):
+        self.selectall = not self.selectall
+        for l in self.line_ids:
+            l.send_check = self.selectall
 
     def get_detail(self):
         if self.line_ids:
@@ -247,6 +261,7 @@ class hv_customer_statement(models.Model):
                         'statement_id': self.id,
                         'consolidatedsm': True,
                     })   
+        return self.env['havi.message'].action_warning('Update Partner List completed', 'Customer Statement')
 
     def send_mail_customer_statement(self):
         default_template = self.env.ref('hv_customer_statement.email_template_customer_statement', False) 

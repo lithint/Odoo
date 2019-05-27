@@ -118,23 +118,15 @@ class hv_batch_invoice_account_abstract_payment(models.AbstractModel):
     
     @api.onchange('pack_id')
     def _onchange_pack_id(self):
-        if not self.pack_id:
+        if not self.pack_id or self.currency_id.round(self.payment_difference_rest) == 0:
             return
-        if self.writeoff_account_ids:
-            self.writeoff_account_ids = [(5,)]
-
-        if self.pack_id.packline_ids:
-            lid = []
-            for l in self.pack_id.packline_ids:
-                wo = self.writeoff_account_ids.create({
-                    'writeoff_account_id': l.account_id.id,
-                    'amount': self.currency_id.round(self.payment_difference_rest/l.ratio),
-                    'payment_id': self.id,
-                    'writeoff_label': l.descritption
-                    
-                })
-                lid.append(wo.id)
-            self.writeoff_account_ids = [(6, 0, lid)]
+        rest = self.payment_difference_rest
+        for l in self.pack_id.packline_ids:
+            self.writeoff_account_ids +=  self.env['batch.account.writeoff'].new({
+                'writeoff_account_id': l.account_id.id, 
+                'amount': self.currency_id.round(rest/l.ratio),
+                'payment_id': self.id, 
+                'writeoff_label': l.descritption })
 
     @api.one
     @api.depends('writeoff_account_ids', 'payment_difference')
@@ -394,9 +386,11 @@ class hv_batch_invoice(models.Model):
         'view_type': 'form',
         'view_mode': 'form',
         'res_model': 'account.register.payments',
+        # 'src_model': 'account.invoice',
         # 'multi': True,
         'view_id': self.env.ref('hv_batch_invoice.view_account_payment_from_invoices').id,
         'target': 'new',
+        # 'key2':'client_action_multi',
         'context': ctx
         }
         
@@ -488,12 +482,14 @@ class hv_message(models.TransientModel):
                 batch_invoice.write({'invoice_ids' : [(5,)]})
                 batch_invoice.write({'invoice_ids' : [(4,  invoice_id[0]) for invoice_id in invoice_ids]})
 
-            resutl = self.env['batch.invoice.import.result'].create({
+            
+            result = self.env['batch.invoice.import.result'].new({
                 'batch_id': batch_invoice.id,
                 'filename': self.filename,
                 'total_rows': len(datas),
                 'import_rows': len(invoice_ids),
             })
+            batch_invoice.import_ids += result
             for data in datas:
                 f = False
                 if 'x_studio_jcurve_invoice' in self.env['account.invoice']._fields:
@@ -507,9 +503,9 @@ class hv_message(models.TransientModel):
                             f = True
                             break
                 if not f:
-                    self.env['batch.invoice.import.result.line'].create({
-                    'import_id': resutl.id,
-                    'tranno': data[number_index[0]] ,
+                    batch_invoice.import_ids[len(batch_invoice.import_ids)-1].importreuslt_ids += self.env['batch.invoice.import.result.line'].new({
+                    'import_id': result.id,
+                    'tranno': data[number_index[0]],
                     'state': 'no',
                     })
 

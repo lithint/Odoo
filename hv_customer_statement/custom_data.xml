@@ -173,7 +173,7 @@
                         </thead>
                         <tbody >
                             <t t-set="line_bal" t-value="0"/>
-                            <tr style="color: black; font-family:Arial, sans-serif; font-style: normal; font-weight: normal; text-decoration: none; font-size: 10pt;background-color: white;" t-foreach="o.invoice_ids" t-as="inv">
+                            <tr style="color: black; font-family:Arial, sans-serif; font-style: normal; font-weight: normal; text-decoration: none; font-size: 10pt;background-color: white;" t-foreach="o.invoice_ids.sorted(key=lambda inv: inv.date_invoice)" t-as="inv">
                                 <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.client_order_ref"/></td>
                                 <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.number"/></td>
                                 <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-field="inv.date_invoice"/></td>
@@ -266,12 +266,15 @@
                             <group>
                                 <field name="showonlyopen"/>
                                 <field name="consolidatedsm"/>
+                                <field name="selectall" invisible="1"/>
                             </group>
                         </group>
                         <!-- <notebook attrs="{'invisible': [('consolidatedsm','=',False)]}"> -->
                         <notebook>
                             <page string="Customer Lines">
-                                <button name="partner_by_invoice" type="object" string="Update Partner List" class="btn-primary" attrs="{'invisible': [('consolidatedsm','=',False)]}"/>
+                                 <button name="partner_by_invoice" type="object" string="Update Partner List" class="btn-primary" attrs="{'invisible': [('consolidatedsm','=',False)]}"/>
+                                <button name="select_all" type="object" string="Select All" class="btn-secondary" attrs="{'invisible': [('selectall','!=',False)]}"/>
+                                <button name="select_all" type="object" string="Unselect All" class="btn-secondary" attrs="{'invisible': [('selectall','=',False)]}"/>
                                 <field 
                                     name="line_ids" 
                                     widget="section_and_note_one2many"
