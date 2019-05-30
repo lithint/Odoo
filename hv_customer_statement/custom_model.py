@@ -12,7 +12,9 @@ from odoo.exceptions import UserError, ValidationError
 from odoo import api, exceptions, fields, models, _
 from odoo.tools.mimetypes import guess_mimetype
 from odoo.tools import config, DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT, pycompat
-
+# /Users/tompooh/Mywork/Odoo/odoo12/enterprise12/account_reports/models/account_followup_report.py
+# /Users/tompooh/Mywork/Odoo/odoo12/addons/account/models/account_move.py
+# /Users/tompooh/Mywork/Odoo/odoo12/enterprise12/account_reports/models/res_partner.py
 try:
     import xlrd
     try:
@@ -75,7 +77,7 @@ class hv_customer_statement_line(models.Model):
     _name = 'hv.customer.statement.line'
 
     customer_id = fields.Many2one('res.partner', string='Customer', domain="[('parent_id', '=', False), ('customer', '=', True)]")
-    invoice_ids = fields.Many2many('account.invoice')
+    invoice_ids = fields.Many2many('account.move.line')
     email_address = fields.Char(string='Email')
     total = fields.Float(string='Balance', readonly=True, compute='_compute_values')
     balance = fields.Float(string='Balance', readonly=True, compute='_compute_values')
@@ -113,9 +115,9 @@ class hv_customer_statement_line(models.Model):
         self.overdue = 0
         if self.invoice_ids:
             # self.write({'invoice_ids': [(6, 0, [inv.id for inv in self.invoice_ids])]})
-            self.total += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.amount_total_signed for i in self.invoice_ids])
-            self.balance += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.residual_signed for i in self.invoice_ids])
-            self.overdue += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.residual_signed for i in self.invoice_ids if i.date_due < fields.Date.today()])
+            # self.total += sum([MAP_INVOICE_TYPE_PAYMENT_SIGN[i.type] * i.amount_total_signed for i in self.invoice_ids])
+            self.balance += sum([i.amount_residual_currency if i.currency_id else i.amount_residual for i in self.invoice_ids if not i.blocked])
+            self.overdue += sum([i.amount_residual_currency if i.currency_id else i.amount_residual for i in self.invoice_ids if (i.date_maturity or i.date) < fields.Date.today() and not i.blocked])
         return True
 
     def search_invoice(self):
@@ -124,14 +126,34 @@ class hv_customer_statement_line(models.Model):
             statement_date = self.statement_id.statement_date
             if start_date == statement_date:
                 start_date = start_date - timedelta(days=3650)
+            # query = """
+            #             SELECT ac.id, right(ac.number,5) number, right(ac.number,5) number1
+            #                 FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
+            #                 where ac.state = 'open' 
+            #                     and ac.type in ('out_invoice','out_refund') 
+            #                     and ac.date_invoice >= '%s' and ac.date_invoice <= '%s'
+            #                     and (pa.id = %s)
+            #                     """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id)
             query = """
-                        SELECT ac.id, right(ac.number,5) number, right(ac.number,5) number1
-                            FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
-                            where ac.state = 'open' 
-                                and ac.type in ('out_invoice','out_refund') 
-                                and ac.date_invoice >= '%s' and ac.date_invoice <= '%s'
-                                and (pa.id = %s)
-                                """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id)
+                    SELECT max(m.id), max(m.id), max(m.id)
+                    from account_move_line m 
+                        inner join res_partner pa on m.partner_id=pa.id and pa.customer=true
+	                    inner join account_account a on m.account_id = a.id 
+		                    and a.deprecated=false and a.internal_type ='receivable'
+                    where m.reconciled=false and m.blocked=false
+                        and m.date >= '%s' and m.date <= '%s'
+                        and (pa.id = %s) and m.invoice_id is not null 
+                        group by m.invoice_id
+                    union all
+                    SELECT (m.id), (m.id), (m.id)
+                    from account_move_line m 
+                        inner join res_partner pa on m.partner_id=pa.id and pa.customer=true
+	                    inner join account_account a on m.account_id = a.id 
+		                    and a.deprecated=false and a.internal_type ='receivable'
+                    where m.reconciled=false and m.blocked=false
+                        and m.date >= '%s' and m.date <= '%s'
+                        and (pa.id = %s) and m.invoice_id is null 
+                    """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, start_date, statement_date + timedelta(days=1), self.customer_id.id)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
 
@@ -142,14 +164,36 @@ class hv_customer_statement_line(models.Model):
             statement_date = self.statement_id.statement_date
             if start_date == statement_date:
                 start_date = start_date - timedelta(days=3650)
+            # query = """
+            #             SELECT ac.id, right(ac.number,5) number, right(ac.number,5) number1
+            #                 FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
+            #                 where ac.state = 'open' 
+            #                     and ac.type in ('out_invoice','out_refund') 
+            #                     and ac.date_invoice >= '%s' and ac.date_invoice <= '%s'
+            #                     and (pa.id = %s or pa.parent_id = %s)
+            #                     """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, self.customer_id.id)
             query = """
-                        SELECT ac.id, right(ac.number,5) number, right(ac.number,5) number1
-                            FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
-                            where ac.state = 'open' 
-                                and ac.type in ('out_invoice','out_refund') 
-                                and ac.date_invoice >= '%s' and ac.date_invoice <= '%s'
-                                and (pa.id = %s or pa.parent_id = %s)
-                                """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, self.customer_id.id)
+                    SELECT max(m.id), max(m.id), max(m.id)
+                    from account_move_line m 
+                        inner join res_partner pa on m.partner_id=pa.id and pa.customer=true
+	                    inner join account_account a on m.account_id = a.id 
+		                    and a.deprecated=false and a.internal_type ='receivable'
+                    where m.reconciled=false and m.blocked=false
+                        and m.date >= '%s' and m.date <= '%s'
+                        and (pa.id = %s or pa.parent_id = %s)
+                        and m.invoice_id is not null 
+                        group by m.invoice_id
+                    union all
+                    SELECT (m.id), (m.id), (m.id)
+                    from account_move_line m 
+                        inner join res_partner pa on m.partner_id=pa.id and pa.customer=true
+	                    inner join account_account a on m.account_id = a.id 
+		                    and a.deprecated=false and a.internal_type ='receivable'
+                    where m.reconciled=false and m.blocked=false
+                    and m.date >= '%s' and m.date <= '%s'
+                        and (pa.id = %s or pa.parent_id = %s)
+                        and m.invoice_id is null 
+                    """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, self.customer_id.id, start_date, statement_date + timedelta(days=1), self.customer_id.id, self.customer_id.id)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
 
@@ -229,13 +273,15 @@ class hv_customer_statement(models.Model):
             if start_date == statement_date:
                 start_date = start_date - timedelta(days=3650)
             query = """
-                        select id, email,1 from res_partner where id in
-                        (select COALESCE(pa.parent_id,pa.id)
-                            FROM account_invoice ac left join res_partner pa on ac.partner_id = pa.id 
-                            where ac.state = 'open' 
-                                and ac.type in ('out_invoice','out_refund') 
-                                and ac.date_invoice >= '%s' and ac.date_invoice <= '%s')
-                                """ % (start_date, statement_date + timedelta(days=1))
+                    select id, email,1 from res_partner where id in
+                    (select COALESCE(pa.parent_id,pa.id)
+                        FROM account_move_line m
+                            inner join res_partner pa on m.partner_id = pa.id and pa.customer=true
+                            inner join account_account a on m.account_id = a.id 
+                                and a.deprecated=false and a.internal_type ='receivable'
+                        where m.reconciled=false and m.blocked=false
+                            and m.date >= '%s' and m.date <= '%s')
+                    """ % (start_date, statement_date + timedelta(days=1))
             partner_ids = self.env['account.invoice']._search_id(query)
             for l in self.line_ids:
                 if not l.consolidatedsm:

@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
+"access_havi_query","havi_query","model_havi_query","base.group_user",1,1,1,1
+"access_havi_result","havi_result","model_havi_result","base.group_user",1,1,1,1

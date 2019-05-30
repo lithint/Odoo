@@ -64,8 +64,8 @@
                                 <div style="float:left; margin-right: 100px;"><br/></div>
                                 <div style="float:left;padding-left:1px;font-weight:nomal;font-size:10pt;vertical-align:middle;text-align:left;color:rgb(0,0,0);">
                                     <span t-field="o.statement_id.statement_date"/><br/><br/>
-                                    <span t-esc="o.balance" t-options='{"widget": "monetary", "display_currency": o.invoice_ids[0].currency_id}'/><br/>
-                                    <span t-field="o.invoice_ids[0].currency_id.name"/><br/>
+                                    <span t-esc="o.balance" t-options='{"widget": "monetary", "display_currency": o.invoice_ids[0].company_currency_id}'/><br/>
+                                    <span t-field="o.invoice_ids[0].company_currency_id.name"/><br/>
                                     <span t-field="o.customer_id.property_payment_term_id.name"/>
                                     <!-- Payment Terms -->
                                 </div>
@@ -119,8 +119,8 @@
                                 <div style="float:right; margin-right: 50px;"><br/></div>
                                 <div style="float:right;font-weight:normal;font-size:10pt;vertical-align:middle;text-align:left;color:black;">
                                     <span t-field="o.statement_id.statement_date"/><br/><br/>
-                                    <span t-esc="o.balance" t-options='{"widget": "monetary", "display_currency": o.invoice_ids[0].currency_id}'/><br/>
-                                    <span t-esc="o.total-o.balance" t-options='{"widget": "monetary", "display_currency": o.invoice_ids[0].currency_id}'/><br/>
+                                    <span t-esc="o.balance" t-options='{"widget": "monetary", "display_currency": o.invoice_ids[0].company_currency_id}'/><br/>
+                                    <span t-esc="o.total-o.balance" t-options='{"widget": "monetary", "display_currency": o.invoice_ids[0].company_currency_id}'/><br/>
                                 </div>
                                 <div style="float:right; margin-right: 100px;"><br/></div>
                                 <div style="float:right;font-weight:bold;font-size:10pt;vertical-align:middle;text-align:left;color:rgb(12,84,123);">
@@ -173,16 +173,20 @@
                         </thead>
                         <tbody >
                             <t t-set="line_bal" t-value="0"/>
-                            <tr style="color: black; font-family:Arial, sans-serif; font-style: normal; font-weight: normal; text-decoration: none; font-size: 10pt;background-color: white;" t-foreach="o.invoice_ids.sorted(key=lambda inv: inv.date_invoice)" t-as="inv">
-                                <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.client_order_ref"/></td>
-                                <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.number"/></td>
-                                <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-field="inv.date_invoice"/></td>
+                            <tr style="color: black; font-family:Arial, sans-serif; font-style: normal; font-weight: normal; text-decoration: none; font-size: 10pt;background-color: white;" t-foreach="o.invoice_ids.sorted(key=lambda inv: inv.date)" t-as="inv">
+                                <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.invoice_id.client_order_ref if inv.invoice_id else ''"/></td>
+                                <td style="width:75pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.invoice_id.number if inv.invoice_id else inv.move_id.name"/></td>
+                                <td style="width:70pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-field="inv.date"/></td>
                                 <td style="width:150pt;text-align: left; padding-left: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-field="inv.name"/></td>
-                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.amount_total_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
-                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.amount_total_signed-inv.residual_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
-                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.residual_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
-                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.residual_signed+line_bal" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
-                                <t t-set="line_bal" t-value="inv.residual_signed+line_bal"/>
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.invoice_id.amount_total_signed if inv.invoice_id else inv.amount_residual_currency if inv.currency_id else inv.amount_residual" t-options='{"widget": "monetary", "display_currency": inv.company_currency_id}'/></td>
+                               
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.invoice_id.amount_total_signed-inv.invoice_id.residual_signed if inv.invoice_id else 0" t-options='{"widget": "monetary", "display_currency": inv.company_currency_id}'/></td>
+                                
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.invoice_id.residual_signed if inv.invoice_id else inv.amount_residual_currency if inv.currency_id else inv.amount_residual" t-options='{"widget": "monetary", "display_currency": inv.company_currency_id}'/></td>
+                                
+                                <td style="width:75pt;text-align: right; padding-right: 4pt;margin:0px;padding-top: -1pt;padding-bottom: -1pt;" ><span t-esc="inv.invoice_id.residual_signed + line_bal if inv.invoice_id else amount_residual_currency  + line_bal if inv.currency_id else inv.amount_residual + line_bal" t-options='{"widget": "monetary", "display_currency": inv.company_currency_id}'/></td>
+                               
+                                <t t-set="line_bal" t-value="inv.invoice_id.residual_signed + line_bal if inv.invoice_id else inv.amount_residual_currency  + line_bal if inv.currency_id else inv.amount_residual + line_bal"/>
                             </tr>
                         </tbody>
                     </table>

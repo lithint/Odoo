@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+   <record id="havi_query_query_form" model="ir.ui.view">
+        <field name="name">query.form</field>
+        <field name="model">havi.query</field>
+        <field name="arch" type="xml">
+            <form string="Query"> 
+                <header>
+                    <button name="action_query" string="Query" type="object" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                    </group>
+                    <notebook>
+                        <page string="Result">
+                            <field name="result"
+                                widget="section_and_note_one2many"
+                                mode="tree,form"
+                                readonly="1">
+                                <tree string="Result" >
+                                    <field name='column0'/>
+                                    <field name='column1'/>
+                                    <field name='column2'/>
+                                    <field name='column3'/>
+                                    <field name='column4'/>
+                                    <field name='column5'/>
+                                    <field name='column6'/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="havi_query_query_tree" model="ir.ui.view">
+        <field name="name">query.tree</field>
+        <field name="model">havi.query</field>
+        <field name="arch" type="xml">
+            <tree string="Query">
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="query_action">
+      <field name="name">Query</field>
+      <field name="res_model">havi.query</field>
+      <field name="view_type">form</field>
+      <field name="view_mode">tree,form</field>
+      <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">
+        </p>
+      </field>
+    </record>
+
+    <menuitem id="havi_technology_query" name="Havi Technology"/>
+    <menuitem id="menu_action_list" name="Action List"
+      parent="havi_technology_query"/>
+    <menuitem id="query_menu" name="Query"
+      parent="menu_action_list" action="query_action"/>
+    
+</odoo>

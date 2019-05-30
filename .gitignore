@@ -1,6 +1,7 @@
 /.history/
 *.pyc
 *.svn
+*.db
 .idea/*
 # sphinx build directories
 _build/
