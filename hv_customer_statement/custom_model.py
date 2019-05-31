@@ -117,7 +117,8 @@ class hv_customer_statement_line(models.Model):
             # self.write({'invoice_ids': [(6, 0, [inv.id for inv in self.invoice_ids])]})
             self.total += sum([i.invoice_id.amount_total_signed if i.invoice_id else i.amount_residual_currency if i.currency_id else i.amount_residual  for i in self.invoice_ids if not i.blocked])
             self.balance += sum([i.invoice_id.residual_signed if i.invoice_id else i.amount_residual_currency if i.currency_id else i.amount_residual for i in self.invoice_ids if not i.blocked])
-            self.overdue += sum([i.invoice_id.residual_signed if i.invoice_id else i.amount_residual_currency if i.currency_id else i.amount_residual for i in self.invoice_ids if (i.date_maturity or i.date) < fields.Date.today() and not i.blocked])
+            # self.overdue += sum([i.invoice_id.residual_signed if i.invoice_id else i.amount_residual_currency if i.currency_id else i.amount_residual for i in self.invoice_ids if ((i.invoice_id and i.invoice_id.date_due < fields.Date.today()) or (i.date_maturity or i.date) < fields.Date.today()) and not i.blocked])
+            self.overdue += sum([i.invoice_id.residual_signed for i in self.invoice_ids if (i.invoice_id and i.invoice_id.date_due < fields.Date.today()) and not i.blocked])
         return True
 
     def search_invoice(self):
