@@ -138,22 +138,23 @@ class hv_customer_statement_line(models.Model):
             query = """
                     SELECT max(m.id), max(m.id), max(m.id)
                     from account_move_line m 
-                        inner join res_partner pa on m.partner_id=pa.id and pa.customer=true
+                        inner join account_invoice i on m.invoice_id=i.id
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
                         and m.date >= '%s' and m.date <= '%s'
-                        and (pa.id = %s) and m.invoice_id is not null 
+                        and (i.partner_id = %s) 
+                        and m.invoice_id is not null 
                         group by m.invoice_id
                     union all
                     SELECT (m.id), (m.id), (m.id)
                     from account_move_line m 
-                        inner join res_partner pa on m.partner_id=pa.id and pa.customer=true
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
                         and m.date >= '%s' and m.date <= '%s'
-                        and (pa.id = %s) and m.invoice_id is null 
+                        and (m.partner_id = %s) 
+                        and m.invoice_id is null 
                     """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, start_date, statement_date + timedelta(days=1), self.customer_id.id)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
@@ -176,25 +177,23 @@ class hv_customer_statement_line(models.Model):
             query = """
                     SELECT max(m.id), max(m.id), max(m.id)
                     from account_move_line m 
-                        inner join res_partner pa on m.partner_id=pa.id and pa.customer=true
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
                         and m.date >= '%s' and m.date <= '%s'
-                        and (pa.id = %s or pa.parent_id = %s)
+                        and (m.partner_id = %s)
                         and m.invoice_id is not null 
                         group by m.invoice_id
                     union all
                     SELECT (m.id), (m.id), (m.id)
                     from account_move_line m 
-                        inner join res_partner pa on m.partner_id=pa.id and pa.customer=true
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
                     and m.date >= '%s' and m.date <= '%s'
-                        and (pa.id = %s or pa.parent_id = %s)
+                        and (m.partner_id = %s)
                         and m.invoice_id is null 
-                    """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, self.customer_id.id, start_date, statement_date + timedelta(days=1), self.customer_id.id, self.customer_id.id)
+                    """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, start_date, statement_date + timedelta(days=1), self.customer_id.id)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
 
@@ -228,8 +227,8 @@ class hv_customer_statement(models.Model):
                 break
 
     def set_consolidated(self):
-        if self.consolidatedsm:
-            self.get_detail()
+        # if self.consolidatedsm:
+            # self.get_detail()
         self.consolidatedsm = not self.consolidatedsm
     
     def select_all(self):
@@ -238,20 +237,21 @@ class hv_customer_statement(models.Model):
             l.send_check = self.selectall
 
     def get_detail(self):
-        if self.line_ids:
-            for l in self.line_ids:
+        lself = self.env['hv.customer.statement.line'].search([('statement_id', '=', self.id), ('consolidatedsm', '=', True)])
+        if lself:
+            for l in lself:
                 if not l.consolidatedsm:
                     continue
                 l.search_all_invoice()
                 for dt in l.child_ids:
                     ex = False
-                    for item in groupby(l.invoice_ids, lambda i: i.partner_id):
+                    for item in groupby(l.invoice_ids, lambda i: i.invoice_id.partner_id if i.invoice_id else i.partner_id):
                         if item[0].id == dt.customer_id.id:
                             ex = True
                             break
                     if not ex:
                         dt.unlink()
-                for item in groupby(l.invoice_ids, lambda i: i.partner_id):
+                for item in groupby(l.invoice_ids, lambda i: i.invoice_id.partner_id if i.invoice_id else i.partner_id):
                     ex = False
                     for dt in l.child_ids:
                         if item[0].id == dt.customer_id.id:
@@ -268,7 +268,7 @@ class hv_customer_statement(models.Model):
         # return self.env['havi.message'].action_warning('General Details was completed', 'Customer Statement')
     
     def partner_by_invoice(self):
-        if self.statement_date and self.consolidatedsm:
+        if self.statement_date:
             start_date = self.start_date
             statement_date = self.statement_date
             if start_date == statement_date:
@@ -284,7 +284,8 @@ class hv_customer_statement(models.Model):
                             and m.date >= '%s' and m.date <= '%s')
                     """ % (start_date, statement_date + timedelta(days=1))
             partner_ids = self.env['account.invoice']._search_id(query)
-            for l in self.line_ids:
+            lself = self.env['hv.customer.statement.line'].search([('statement_id', '=', self.id), ('consolidatedsm', '=', True)])
+            for l in lself:
                 if not l.consolidatedsm:
                     continue
                 ex = False
@@ -297,7 +298,7 @@ class hv_customer_statement(models.Model):
 
             for item in partner_ids:
                 ex = False
-                for dt in self.line_ids:
+                for dt in lself:
                     if item[0] == dt.customer_id.id:
                         ex = True
                         break
@@ -307,7 +308,8 @@ class hv_customer_statement(models.Model):
                         'email_address': item[1],
                         'statement_id': self.id,
                         'consolidatedsm': True,
-                    })   
+                    })  
+            self.get_detail() 
         return self.env['havi.message'].action_warning('Update Partner List completed', 'Customer Statement')
 
     def send_mail_customer_statement(self):

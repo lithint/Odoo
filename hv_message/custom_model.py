@@ -167,7 +167,31 @@ class hv_message(models.TransientModel):\n\
             'res_id': m.id,
             'target': 'new',
         }
-
+    @api.multi
+    def action_confirm_no(self):
+        m = self.create({
+            'title': 'Warning',
+            'name': "Copy this function to your code:\n\
+class hv_message(models.TransientModel):\n\
+    _name = 'havi.message'\n\
+    _inherit = 'havi.message'\n\
+\n\
+    def action_confirm_no(self):\n\
+        if self.module=='%s' and self.title=='%s': \n\
+            Your action code here!!!\n\
+        else:\n\
+            return super(hv_message, self).action_confirm_no()" % (self.module, self.title),
+        })
+        return {
+            'name': m.title,
+            'view_type': 'form',
+            'view_mode': 'form',
+            'view_id': self.env.ref('hv_message.warning').id,
+            'res_model': 'havi.message',
+            'type': 'ir.actions.act_window',
+            'res_id': m.id,
+            'target': 'new',
+        }
     @api.multi
     def import_file(self):
         m = self.create({

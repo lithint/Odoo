@@ -276,7 +276,8 @@
                         <!-- <notebook attrs="{'invisible': [('consolidatedsm','=',False)]}"> -->
                         <notebook>
                             <page string="Customer Lines">
-                                 <button name="partner_by_invoice" type="object" string="Update Partner List" class="btn-primary" attrs="{'invisible': [('consolidatedsm','=',False)]}"/>
+                                 <button name="partner_by_invoice" type="object" string="Update Partner List" class="btn-primary" />
+                                 <!-- attrs="{'invisible': [('consolidatedsm','=',False)]}" -->
                                 <button name="select_all" type="object" string="Select All" class="btn-secondary" attrs="{'invisible': [('selectall','!=',False)]}"/>
                                 <button name="select_all" type="object" string="Unselect All" class="btn-secondary" attrs="{'invisible': [('selectall','=',False)]}"/>
                                 <field 
