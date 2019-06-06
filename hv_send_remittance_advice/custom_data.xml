@@ -229,7 +229,8 @@
 			<tr>
 				<td align="left" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Date
 				</td>
-				<td align="left" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Description</td>
+                <td align="left" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Vendor Invoice #</td>
+				<td align="left" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Reference</td>
 				<td align="right" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Due Date</td>
 				<td align="right" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Amount Due</td>
 				<td align="right" style="font-weight:bold;font-size:10pt;vertical-align:middle;padding:2px 6px;background-color:rgb(207,221,231);color:rgb(12,84,123)">Payment Amount</td>
@@ -241,6 +242,7 @@
                     % for line in pay.invoice_ids:
                         <tr>
                             <td align="left" style="padding:4px 6px">${line.date_invoice}</td>
+                            <td align="left" style="padding:4px 6px">${line.reference if line.reference else '' }</td>
                             <td align="left" style="padding:4px 6px">${line.number}</td>
                             <td align="right" style="padding:4px 6px">${line.date_due}</td>
                             <td align="right" style="padding:4px 6px">${format_amount(line.amount_total_signed, line.currency_id)}</td>

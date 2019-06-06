@@ -72,6 +72,7 @@ class hv_account_payment(models.Model):
     email_cc  = fields.Char(string='CC')
     email_bcc  = fields.Char(string='BCC')
     payment_reference = fields.Char(string='Payment Reference')
+    communication = fields.Char(string='Vendor Invoices #')
 
     @api.model
     def create(self, vals):
