@@ -12,7 +12,6 @@
     ],
     'data': [
         'views/product_views.xml',
-        'views/sale_order_views.xml',
     ],
     'demo_xml': [],
     'installable': True,
