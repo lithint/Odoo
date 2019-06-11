@@ -14,6 +14,5 @@ Gentec Customization Module
         'views/custom_sale_order.xml',
         'views/custom_invoice.xml',
         'views/product_views.xml',
-        'views/sale_order_views.xml',
     ],
 }

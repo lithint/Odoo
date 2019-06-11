@@ -6,8 +6,7 @@ class ProductTemplate(models.Model):
     _inherit = "product.template"
 
     potential_qty = fields.Integer(compute='_compute_potential_qty', string='Potential Qty')
-    qty_per_warehouse = fields.Text(compute='_compute_qty_per_warehouse' ,string='Quantity')
-
+    x_studio_quantity = fields.Text(compute='_compute_x_studio_quantity' ,string='Quantity')
     @api.multi
     def _compute_potential_qty(self):
         for template in self:
@@ -25,7 +24,7 @@ class ProductTemplate(models.Model):
             template.potential_qty = raw_potential_qty and min(raw_potential_qty) or 0.0
             
     @api.multi
-    def _compute_qty_per_warehouse(self):
+    def _compute_x_studio_quantity(self):
         for template in self:
             total_qty = template.qty_available
             qty_per_warehouse_text = "%s: " % (int(total_qty))
@@ -35,4 +34,4 @@ class ProductTemplate(models.Model):
                 qty_available = qty[template.id]['qty_available']
                 qty_per_warehouse_list.append('%s (%s)' % (int(qty_available), warehouse.code))
             qty_per_warehouse_text = qty_per_warehouse_text + ' , '.join(qty_per_warehouse_list)
-            template.qty_per_warehouse = qty_per_warehouse_text
+            template.x_studio_quantity = qty_per_warehouse_text
