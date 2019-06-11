@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import math
 from odoo.exceptions import UserError, ValidationError
 from odoo import api, exceptions, fields, models, _
 
@@ -19,3 +20,8 @@ class SaleOrder(models.Model):
                                      ('Not Applicable', 'Not Applicable'),], string='FOC', default='Not Applicable', required=True)
     warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse',required=True, readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
         default=_default_warehouse_id)
+
+class SaleOrderLine(models.Model):
+    _inherit = "sale.order.line"
+
+    qty_per_warehouse = fields.Text(related='product_id.qty_per_warehouse' ,string='Available Quantity', readonly=True)
