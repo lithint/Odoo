@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+    <record id="pack_rebate_form_view" model="ir.ui.view">
+            <field name="name">pack.rebate.form</field>
+            <field name="model">pack.rebate</field>
+            <field name="arch" type="xml">
+                <form string="Payment Model Form View">
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="default"/>
+                        </group>
+                        <notebook colspan="4">
+                            <page string="Account Ratio">
+                                <field name="packline_ids" 
+                                    widget="section_and_note_one2many"
+                                >
+                                    <tree editable="bottom" >
+                                        <field name="account_id"/>
+                                        <field name="descritption"/>
+                                        <field name="ratio"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+            
+        <record id="pack_rebate_tree_view" model="ir.ui.view">
+            <field name="name">pack.rebate.tree</field>
+            <field name="model">pack.rebate</field>
+            <field name="arch" type="xml">
+                <tree string="Payment Model Tree View" create="true" import="false" delete="true">
+                    <field name="name"/>
+                    <field name="default"/>
+                </tree>
+            </field>
+        </record>
+        <record id="action_pack_form" model="ir.actions.act_window">
+            <field name="name">Payment Model</field>
+            <field name="res_model">pack.rebate</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('pack_rebate_tree_view')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('pack_rebate_form_view')})]"/>
+            <field name="help" type="html">
+              <p class="o_view_nocontent_smiling_face">
+                !!!
+              </p>
+            </field>
+        </record>
+        <menuitem action="action_pack_form" name="Payment Model" id="menu_action_pack_form" parent="account.account_account_menu" groups="account.group_account_user" sequence="2"/>
+    <!--  =========================================================================================== -->
+
+        <record id="res_partner_view_form" model="ir.ui.view">
+            <field name="name">res.partner.form</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="account.view_partner_property_form"/>
+            <field name="arch" type="xml">
+                <!-- <xpath expr="//page[@name='property_account_payable_id']" position="after">
+                    <field name="rebate" placeholder="Value from 0 to 100"/>
+                </xpath> -->
+                <field name="property_account_payable_id" position="after">
+                    <field name="rebate" placeholder="Value from 0 to 100"/>
+                </field>
+            </field>
+        </record>
+        
+        <record id="inherite_invoice_supplier_tree" model="ir.ui.view">
+            <field name="name">hv_batch_invoice_inherite_invoice_supplier_tree</field>
+            <field name="model">account.invoice</field>
+            <field name="inherit_id" ref="account.invoice_supplier_tree"/>
+            <field name="arch" type="xml">
+                <data>
+                    <xpath expr="//field[@name='vendor_display_name']" position="replace">
+                        <field name="vendor_display_name" groups="base.group_user" string="Customer"/>
+                    </xpath>
+                </data>
+            </field>
+        </record>
+<!--  =========================================================================================== -->
+        <record id="view_account_payment_from_invoices" model="ir.ui.view">
+            <field name="name">hv.batch.invoice.account.register.payments.wizard</field>
+            <field name="model">account.register.payments</field>
+            <field name="arch" type="xml">
+                <form string="Register Payment">
+                    <group>
+                        <field name="payment_type" invisible="1"/>
+                        <field name="partner_type" invisible="1"/>
+                        <field name="invoice_ids" invisible="1"/>
+                        <field name="partner_id" invisible="1"/>
+                        <field name="multi" invisible="1"/>
+                        <group>
+                            <label for="amount"/>
+                            <div name="amount_div" class="o_row">
+                                <field name="amount" attrs="{'readonly': [('multi', '=', True)]}"/>
+                                <field name="currency_id"
+                                       attrs="{'readonly': [('multi', '=', True)]}"
+                                       options="{'no_create': True, 'no_open': True}"
+                                       groups="base.group_multi_currency"/>
+                            </div>
+                            <field name="journal_id" widget="selection" attrs="{'invisible': [('amount', '=', 0)]}"/>
+                            <field name="hide_payment_method" invisible="1"/>
+                            <field name="payment_method_id" widget="radio" attrs="{'invisible': ['|', ('hide_payment_method', '=', True), ('amount', '=', 0.0)]}"/>
+                            <field name="partner_bank_account_id" attrs="{'invisible': [('show_partner_bank_account', '!=', True)], 'required': [('show_partner_bank_account', '=', True)]}" context="{'default_partner_id': partner_id}"/>
+                            <field name="show_partner_bank_account" invisible="1"/>
+                            <field name="payment_method_code" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="payment_date"/>
+                            <field name="group_invoices"/>
+                            <field name="show_communication_field" invisible="1"/>
+                            <field name="communication" attrs="{'invisible': [('show_communication_field', '=', False)]}"/>
+                            <p colspan="2" attrs="{'invisible': [('show_communication_field', '=', True)]}">Memo will be computed from invoices</p>
+                        </group>
+                    </group>
+                    <group attrs="{'invisible': [('payment_difference', '=', 0.0)]}">
+                        <label for="payment_difference"/>
+                        <div>
+                            <field name="payment_difference"/>
+                            <field name="payment_difference_handling" widget="radio" nolabel="1"/>
+                            <group attrs="{'invisible': [('payment_difference_handling','=','open')]}">
+                                <field name="payment_difference_rest" string="Payment Rest"/>
+                                <field name="pack_id"/>
+                                <field name="writeoff_account_ids" string="Post Difference In" attrs="{'required': [('payment_difference_handling', '=', 'reconcile')]}"/>
+                                <label for="journal_id" string="Journal" attrs="{'invisible': [('amount', '!=', 0)]}"/>
+                                <field name="journal_id" string="Journal" widget="selection" attrs="{'invisible': [('amount', '!=', 0)]}"/>
+                                <!-- <label for="writeoff_label" class="oe_edit_only" string="Label"/>
+                                <field name="writeoff_label" attrs="{'required': [('payment_difference_handling', '=', 'reconcile')]}"/> -->
+                            </group>
+                        </div>
+                    </group>
+                    <footer>
+                        <button string='Validate' name="create_payments" type="object" class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+               </form>
+            </field>
+        </record>
+<!--  =========================================================================================== -->
+         <record id="batch_account_writeoff_tree_view" model="ir.ui.view">
+            <field name="name">batch.account.writeoff.tree</field>
+            <field name="model">batch.account.writeoff</field>
+            <field name="arch" type="xml">
+                <tree string="Batch account writeoff view">
+                    <field name="writeoff_account_id"/>
+                    <field name="amount" sum="Total Amount"/>
+                    <field name="writeoff_label"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="batch_account_writeoff_form_view" model="ir.ui.view">
+            <field name="name">batch.account.writeoff.form</field>
+            <field name="model">batch.account.writeoff</field>
+            <field name="arch" type="xml">
+                <form string="Batch Account WriteOff Form View">
+                    <sheet string="Batch Writeoff">
+                    <group>
+                        <field name="writeoff_account_id"/>
+                        <field name="amount"/>
+                        <field name="writeoff_label"/>
+                        <field name="payment_id" invisible="1"/>
+                    </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+<!--  =========================================================================================== -->
+        <record id="batch_invoice_form_view" model="ir.ui.view">
+            <field name="name">batch.invoice.form</field>
+            <field name="model">batch.invoice</field>
+            <field name="arch" type="xml">
+                <form string="Batch Invoices Form View">
+                    <header>
+                        <button name="import_statement" type="object" string="Import" class="btn-primary" attrs="{'invisible': [('state','!=', 'draft')]}"/>
+                        <button name="action_confirm" type="object" string="Confirm" class="btn-primary" attrs="{'invisible': [('state','!=', 'draft')]}"/>
+                        <button name="action_register_payment_hv" type="object" string="Register Payment"  class="btn-primary" attrs="{'invisible': [('state','not in', ['open', 'run'])]}"/>
+                        <button name="action_cancel" type="object" string="Cancel" class="btn-secondary" attrs="{'invisible': [('state','!=', 'open')]}"/>
+                    </header>
+                    <sheet string="Batch Invoice">
+                    <group>
+                        <field name="name" attrs="{'readonly': [('state','!=', 'draft')]}"/>
+                        <field name="customer_id" attrs="{'readonly': [('state','!=', 'draft')]}"/>
+                        <group>
+                            <field name="total"/>
+                            <field name="rebate"/>
+                        </group>
+                        <group>
+                            <field name="rebatepercent"/>
+                            <field name="state"/>
+                        </group>
+                    </group>
+                    <notebook colspan="4">
+                        <page string="Invoice Lines"> 
+                            <field name="invoice_ids_domain" invisible="1"/>
+                            <field name="invoice_ids" widget="many2many" 
+                            domain = "[('id', 'in', invoice_ids_domain)]"
+                            context="{'default_invoice_ids': invoice_ids}"
+                            attrs="{'readonly': [('state','!=', 'draft')]}"/>
+                        </page>
+                        <!-- <page string='test' attrs="{'invisible': [('customer_id', '!=', False)]}">
+                        <field name="invoice_ids" widget="many2many" 
+                            domain="['|', ('partner_id', '=', customer_id), ('partner_id.parent_id', '=', customer_id), ('state', '=', 'open'), ('type', 'in', ['out_invoice', 'out_refund'])]"
+                            context="{'default_invoice_ids': invoice_ids}"
+                            attrs="{'readonly': [('state','!=', 'draft')]}"/>
+                        </page> -->
+                        <page string="Import Result">
+                            <field name="import_ids" widget="one2many_list" readonly="1">
+                                <tree string="Result" >
+                                    <field name="filename"/>
+                                    <field name="total_rows"/>
+                                    <field name="import_rows"/>
+                                    <field name="write_date" string="Import date"/>
+                                    <button name="download_ir" type="object" string="Print" class="btn-primary"/>
+                                </tree>
+                                <form string="Import resutl">
+                                    <sheet string="Import Result">
+                                        <group>
+                                            <field name="filename"/>
+                                            <field name="total_rows"/>
+                                            <field name="import_rows"/>
+                                        </group>
+                                        <page string="Not Imported">
+                                            <field name="importreuslt_ids" widget="one2many_list"  readonly="1" >
+                                                <tree>
+                                                    <field name="tranno"/>
+                                                    <field name="state"/>          
+                                                </tree>
+                                            </field>
+                                        </page>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+                    </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+            
+        <record id="batch_invoice_tree_view" model="ir.ui.view">
+            <field name="name">batch.invoice.tree</field>
+            <field name="model">batch.invoice</field>
+            <field name="arch" type="xml">
+                <tree string="Batch Invoices Tree View" create="true" import="false" delete="true">
+                    <field name="name"/>
+                    <field name="customer_id"/>
+                    <field name="total"/>
+                    <field name="rebate"/>
+                    <field name="rebatepercent"/>
+                    <field name="state"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_view_batch_invoice_statements" model="ir.actions.act_window">
+            <field name="name">Batch Invoices</field>
+            <field name="res_model">batch.invoice</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('batch_invoice_tree_view')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('batch_invoice_form_view')})]"/>
+            <field name="help" type="html">
+              <p class="o_view_nocontent_smiling_face">
+                !!!
+              </p>
+            </field>
+        </record>
+
+        <menuitem id="batch_invoice_menu" name="Batch Invoices" parent="account.menu_finance_receivables"
+                action="action_view_batch_invoice_statements" sequence="1"/>
+
+    </data>
+</odoo>
