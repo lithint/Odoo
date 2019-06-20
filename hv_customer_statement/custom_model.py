@@ -138,7 +138,7 @@ class hv_customer_statement_line(models.Model):
             query = """
                     SELECT max(m.id), max(m.id), max(m.id)
                     from account_move_line m 
-                        inner join account_invoice i on m.invoice_id=i.id
+                        inner join account_invoice i on m.invoice_id=i.id and i.amount_total_signed!=0 and i.state='open'
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
@@ -177,6 +177,7 @@ class hv_customer_statement_line(models.Model):
             query = """
                     SELECT max(m.id), max(m.id), max(m.id)
                     from account_move_line m 
+                        inner join account_invoice i on m.invoice_id=i.id and i.amount_total_signed!=0 and i.state='open'
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
