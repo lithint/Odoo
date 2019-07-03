@@ -6,3 +6,4 @@ class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
     x_studio_available_qty = fields.Text(related='product_id.x_studio_quantity' ,string='Available Quantity', readonly=True)
+    potential_qty = fields.Text(related='product_id.potential_qty' ,string='Potential Quantity', readonly=True)
