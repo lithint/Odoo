@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_hv_custom_product_template_form_inherited" model="ir.ui.view">
+            <field name="name">hv.custom.product.form.inherited</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="studio_customization.odoo_studio_product__ec1873cf-098e-4fba-8b1f-2173d8f7444d"/>
+            <field name="arch" type="xml">
+                <field name="x_studio_kit" position="after">
+                    <field name="potential_qty" attrs="{'invisible': [('x_studio_kit','=', False)]}"/>
+                </field>
+            </field>
+        </record>
+
+    </data>
+</odoo>
