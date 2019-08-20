@@ -251,7 +251,13 @@ class hv_customer_statement(models.Model):
                             ex = True
                             break
                     if not ex:
-                        dt.unlink()
+                        try:
+                            self.env.cr.commit()
+                            dt.unlink()
+                        except:
+                            self.env.cr.rollback()
+                            pass
+
                 for item in groupby(l.invoice_ids, lambda i: i.invoice_id.partner_id if i.invoice_id else i.partner_id):
                     ex = False
                     for dt in l.child_ids:
@@ -295,8 +301,13 @@ class hv_customer_statement(models.Model):
                         ex = True
                         break
                 if not ex:
-                    l.unlink()
-
+                    try:
+                        self.env.cr.commit()
+                        l.unlink()
+                    except:
+                        self.env.cr.rollback()
+                        pass
+                        
             for item in partner_ids:
                 ex = False
                 for dt in lself:
