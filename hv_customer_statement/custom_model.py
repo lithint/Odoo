@@ -142,7 +142,7 @@ class hv_customer_statement_line(models.Model):
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
-                        and m.date AT TIME ZONE 'UTC' >= '%s' and m.date AT TIME ZONE 'UTC' <= '%s'
+                        and m.date  >= '%s' and m.date <= '%s'
                         and (i.partner_id = %s) 
                         and m.invoice_id is not null 
                         group by m.invoice_id
@@ -152,10 +152,10 @@ class hv_customer_statement_line(models.Model):
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
-                        and m.date AT TIME ZONE 'UTC' >= '%s' and m.date AT TIME ZONE 'UTC' <= '%s'
+                        and m.date  >= '%s' and m.date <= '%s'
                         and (m.partner_id = %s) 
                         and m.invoice_id is null 
-                    """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, start_date, statement_date + timedelta(days=1), self.customer_id.id)
+                    """ % (start_date, statement_date , self.customer_id.id, start_date, statement_date, self.customer_id.id)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
 
@@ -181,7 +181,7 @@ class hv_customer_statement_line(models.Model):
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
-                        and m.date AT TIME ZONE 'UTC' >= '%s' and m.date AT TIME ZONE 'UTC' <= '%s'
+                        and m.date >= '%s' and m.date  <= '%s'
                         and (m.partner_id = %s)
                         and m.invoice_id is not null 
                         group by m.invoice_id
@@ -191,10 +191,10 @@ class hv_customer_statement_line(models.Model):
 	                    inner join account_account a on m.account_id = a.id 
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
-                    and m.date AT TIME ZONE 'UTC' >= '%s' and m.date AT TIME ZONE 'UTC' <= '%s'
+                    and m.date  >= '%s' and m.date  <= '%s'
                         and (m.partner_id = %s)
                         and m.invoice_id is null 
-                    """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, start_date, statement_date + timedelta(days=1), self.customer_id.id)
+                    """ % (start_date, statement_date , self.customer_id.id, start_date, statement_date, self.customer_id.id)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
 
@@ -282,8 +282,8 @@ class hv_customer_statement(models.Model):
                             inner join account_account a on m.account_id = a.id 
                                 and a.deprecated=false and a.internal_type ='receivable'
                         where m.reconciled=false and m.blocked=false
-                            and m.date AT TIME ZONE 'UTC' >= '%s' and m.date AT TIME ZONE 'UTC' <= '%s')
-                    """ % (start_date, statement_date + timedelta(days=1))
+                            and m.date >= '%s' and m.date <= '%s')
+                    """ % (start_date, statement_date)
             partner_ids = self.env['account.invoice']._search_id(query)
             lself = self.env['hv.customer.statement.line'].search([('statement_id', '=', self.id), ('consolidatedsm', '=', True)])
             for l in lself:
