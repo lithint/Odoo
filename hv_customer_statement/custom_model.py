@@ -251,12 +251,8 @@ class hv_customer_statement(models.Model):
                             ex = True
                             break
                     if not ex:
-                        try:
-                            self.env.cr.commit()
-                            dt.unlink()
-                        except:
-                            self.env.cr.rollback()
-                            pass
+                        dt.unlink()
+                        l.child_ids -= dt
 
                 for item in groupby(l.invoice_ids, lambda i: i.invoice_id.partner_id if i.invoice_id else i.partner_id):
                     ex = False
@@ -301,13 +297,9 @@ class hv_customer_statement(models.Model):
                         ex = True
                         break
                 if not ex:
-                    try:
-                        self.env.cr.commit()
-                        l.unlink()
-                    except:
-                        self.env.cr.rollback()
-                        pass
-                        
+                    l.unlink()
+                    lself -= l
+            
             for item in partner_ids:
                 ex = False
                 for dt in lself:
@@ -321,6 +313,7 @@ class hv_customer_statement(models.Model):
                         'statement_id': self.id,
                         'consolidatedsm': True,
                     })  
+            # self.env.cr.commit()
             self.get_detail() 
         return self.env['havi.message'].action_warning('Update Partner List completed', 'Customer Statement')
 
