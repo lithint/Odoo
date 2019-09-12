@@ -167,6 +167,7 @@ class hv_message(models.TransientModel):\n\
             'res_id': m.id,
             'target': 'new',
         }
+<<<<<<< HEAD
     @api.multi
     def action_confirm_no(self):
         m = self.create({
@@ -192,6 +193,9 @@ class hv_message(models.TransientModel):\n\
             'res_id': m.id,
             'target': 'new',
         }
+=======
+
+>>>>>>> remotes/origin/feature_gst_report
     @api.multi
     def import_file(self):
         m = self.create({

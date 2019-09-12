@@ -103,7 +103,10 @@ class StockPicking(models.Model):
             account = self.get_account_properties()
             account_invoice_obj.write({'user_id': sale_order.user_id.id})
             account_invoice_obj.write({'name': sale_order.client_order_ref})
+<<<<<<< HEAD
             #account_invoice_obj.write({'date_invoice': datetime.date.today()})
+=======
+>>>>>>> remotes/origin/feature_gst_report
             today_date = fields.Date.context_today(self)
             account_invoice_obj.write({'date_invoice': today_date})
             for inv_lines in account_invoice_obj.invoice_line_ids:
@@ -139,6 +142,7 @@ class StockPicking(models.Model):
     def do_print_picking_2(self):
         self.write({'x_studio_delivery_printed': True})
         return self.env.ref('stock.action_report_delivery').report_action(self)
+<<<<<<< HEAD
 
 class AccountInvoiceLine(models.Model):
     _inherit = "account.invoice.line"
@@ -165,3 +169,5 @@ class AccountInvoiceLine(models.Model):
 
         return rslt
     
+=======
+>>>>>>> remotes/origin/feature_gst_report
