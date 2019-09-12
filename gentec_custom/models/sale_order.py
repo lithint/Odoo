@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import math
-<<<<<<< HEAD
 from odoo.exceptions import UserError, ValidationError
 from odoo import api, exceptions, fields, models, _
 
@@ -21,9 +20,6 @@ class SaleOrder(models.Model):
                                      ('Not Applicable', 'Not Applicable'),], string='FOC', default='Not Applicable', required=True)
     warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse',required=True, readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
         default=_default_warehouse_id)
-=======
-from odoo import api, fields, models
->>>>>>> remotes/origin/feature_gst_report
 
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"

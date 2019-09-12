@@ -22,11 +22,7 @@
                 </div>
                 <footer>
                     <button name="action_confirm_yes" string="Yes" type="object" class="btn-primary" />
-<<<<<<< HEAD
                     <button name="action_confirm_no" string="No" type="object" class="btn-secondary"/>
-=======
-                    <button name="cancel" string="No" special="cancel" class="btn-secondary"/>
->>>>>>> remotes/origin/feature_gst_report
                 </footer>
             </form>
         </field>

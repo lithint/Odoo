@@ -7,10 +7,7 @@ class ProductTemplate(models.Model):
 
     potential_qty = fields.Text(compute='_compute_potential_qty', string='Potential Qty')
     x_studio_quantity = fields.Text(compute='_compute_x_studio_quantity' ,string='Quantity')
-<<<<<<< HEAD
-=======
 
->>>>>>> remotes/origin/feature_gst_report
     @api.multi
     def _compute_potential_qty(self):
         for template in self:
