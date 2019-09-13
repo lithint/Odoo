@@ -181,18 +181,18 @@ class GstReport(models.TransientModel):
             select = """select c.id, c.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
                     from account_move_line a, account_journal c, account_tax b
                     where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
-                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use in('%s','sale','purchase') and a.journal_id=c.id
+                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use = '%s' and a.journal_id=c.id
                     group by c.id, c.name order by c.name
                 """  % (options.get('date').get('date_from'), datetime.strptime(options.get('date').get('date_to'), '%Y-%m-%d').date()+timedelta(days=1), options.get('reporttype'))
         else:
             select = """select c.id, c.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
                     from account_move_line a, account_journal c, account_tax b
                     where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
-                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use in('%s','sale','purchase') 
+                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use = '%s'
                     and a.journal_id=c.id and c.id=%s
                     group by c.id, c.name order by c.name
                 """  % (options.get('date').get('date_from'), datetime.strptime(options.get('date').get('date_to'), '%Y-%m-%d').date()+timedelta(days=1), options.get('reporttype'), line_id.split('_')[1])
-                
+
         self.env.cr.execute(select, [])
         results = self.env.cr.dictfetchall()
         if not results:
@@ -220,7 +220,7 @@ class GstReport(models.TransientModel):
                     case when trim(a.ref)='' then d.name else a.ref end as ref
                     from account_move_line a, account_journal c ,account_tax b, account_move d
                     where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
-                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use in('%s','sale','purchase')
+                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use = '%s'
                     and a.move_id=d.id and a.journal_id=c.id and c.id =%s order by a.create_date
                 """  % (options.get('date').get('date_from'), datetime.strptime(options.get('date').get('date_to'), '%Y-%m-%d').date()+timedelta(days=1), options.get('reporttype'), current_id)
 
