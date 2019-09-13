@@ -217,7 +217,7 @@ class GstReport(models.TransientModel):
 
             if 'journal_%s' % (current_id) in options.get('unfolded_lines') or options.get('unfold_all'):
                 select = """select a.id, a.name, a.create_date, a.tax_base_amount net, abs(a.balance) tax,
-                    case when trim(a.ref)='' then d.name else a.ref end as ref
+                    case when trim(a.ref)='' or a.ref is null then d.name else a.ref end as ref
                     from account_move_line a, account_journal c ,account_tax b, account_move d
                     where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
                     and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use = '%s'
