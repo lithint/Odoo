@@ -177,12 +177,22 @@ class GstReport(models.TransientModel):
     def _get_lines(self, options, line_id=None):
         convert_date = self.env['ir.qweb.field.date'].value_to_html
         lines = []
-        select = """select c.id, c.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
+        if not line_id:
+            select = """select c.id, c.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
                     from account_move_line a, account_journal c, account_tax b
                     where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
-                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use ='%s' and a.journal_id=c.id
+                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use in('%s','sale','purchase') and a.journal_id=c.id
                     group by c.id, c.name order by c.name
                 """  % (options.get('date').get('date_from'), datetime.strptime(options.get('date').get('date_to'), '%Y-%m-%d').date()+timedelta(days=1), options.get('reporttype'))
+        else:
+            select = """select c.id, c.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
+                    from account_move_line a, account_journal c, account_tax b
+                    where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
+                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use in('%s','sale','purchase') 
+                    and a.journal_id=c.id and c.id=%s
+                    group by c.id, c.name order by c.name
+                """  % (options.get('date').get('date_from'), datetime.strptime(options.get('date').get('date_to'), '%Y-%m-%d').date()+timedelta(days=1), options.get('reporttype'), line_id.split('_')[1])
+                
         self.env.cr.execute(select, [])
         results = self.env.cr.dictfetchall()
         if not results:
@@ -191,27 +201,27 @@ class GstReport(models.TransientModel):
         current_id = 0
         total_net = 0
         total_tax = 0
-        offset = int(options.get('lines_offset', 0))
+
         for values in results:
             total_net += values['net']
             total_tax += values['tax']
             current_id = values['id']
-            if offset == 0:
-                lines.append({
-                        'id': 'journal_%s' % (current_id),
-                        'name': '%s' % (values['name']),
-                        'level': 2,
-                        'columns': [{'name': n} for n in ['', '', '', self.format_value(values['net']), self.format_value(values['tax'])]],
-                        'unfoldable': True,
-                        'unfolded': 'journal_%s' % (current_id)  in options.get('unfolded_lines') or options.get('unfold_all'),
-                    })
+            lines.append({
+                    'id': 'journal_%s' % (current_id),
+                    'name': '%s' % (values['name']),
+                    'level': 2,
+                    'columns': [{'name': n} for n in ['', '', '', self.format_value(values['net']), self.format_value(values['tax'])]],
+                    'unfoldable': True,
+                    'unfolded': 'journal_%s' % (current_id)  in options.get('unfolded_lines') or options.get('unfold_all'),
+                })
 
             if 'journal_%s' % (current_id) in options.get('unfolded_lines') or options.get('unfold_all'):
-                select = """select a.id, a.name, a.create_date, a.ref, a.tax_base_amount net, abs(a.balance) tax
-                    from account_move_line a, account_journal c ,account_tax b
+                select = """select a.id, a.name, a.create_date, a.tax_base_amount net, abs(a.balance) tax,
+                    case when trim(a.ref)='' then d.name else a.ref end as ref
+                    from account_move_line a, account_journal c ,account_tax b, account_move d
                     where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
-                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use ='%s'
-                    and a.journal_id=c.id and c.id =%s order by a.create_date
+                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use in('%s','sale','purchase')
+                    and a.move_id=d.id and a.journal_id=c.id and c.id =%s order by a.create_date
                 """  % (options.get('date').get('date_from'), datetime.strptime(options.get('date').get('date_to'), '%Y-%m-%d').date()+timedelta(days=1), options.get('reporttype'), current_id)
 
                 self.env.cr.execute(select, [])
