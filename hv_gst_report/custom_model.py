@@ -191,11 +191,12 @@ class GstReport(models.TransientModel):
         current_id = 0
         total_net = 0
         total_tax = 0
+        offset = int(options.get('lines_offset', 0))
         for values in results:
-            if values['id'] != current_id:
-                total_net += values['net']
-                total_tax += values['tax']
-                current_id = values['id']
+            total_net += values['net']
+            total_tax += values['tax']
+            current_id = values['id']
+            if offset == 0:
                 lines.append({
                         'id': 'journal_%s' % (current_id),
                         'name': '%s' % (values['name']),
@@ -245,95 +246,8 @@ class GstReport(models.TransientModel):
         #     lines.extend(self._get_line_total_per_month(options, values['company_id'], results))
         return lines
 
-        # grouped_partners = self._group_by_partner_id(options, line_id)
-        # sorted_partners = sorted(grouped_partners, key=lambda p: p.name or '')
-        # unfold_all = context.get('print_mode') and not options.get('unfolded_lines')
         
         # total_initial_balance = total_debit = total_credit = total_balance = 0.0
-
-        # for partner in sorted_partners:
-        #     debit = grouped_partners[partner]['debit']
-        #     credit = grouped_partners[partner]['credit']
-        #     balance = grouped_partners[partner]['balance']
-        #     initial_balance = grouped_partners[partner]['initial_bal']['balance']
-        #     total_initial_balance += initial_balance
-        #     total_debit += debit
-        #     total_credit += credit
-        #     total_balance += balance
-        #     columns = [self.format_value(initial_balance), self.format_value(debit), self.format_value(credit)]
-        #     if self.user_has_groups('base.group_multi_currency'):
-        #         columns.append('')
-        #     columns.append(self.format_value(balance))
-        #     # don't add header for `load more`
-        #     if offset == 0:
-        #         lines.append({
-        #             'id': 'partner_' + str(partner.id),
-        #             'name': partner.name,
-        #             'columns': [{'name': v} for v in columns],
-        #             'level': 2,
-        #             'trust': partner.trust,
-        #             'unfoldable': True,
-        #             'unfolded': 'partner_' + str(partner.id) in options.get('unfolded_lines') or unfold_all,
-        #             'colspan': 6,
-        #         })
-        #     if 'partner_' + str(partner.id) in options.get('unfolded_lines') or unfold_all:
-        #         if offset == 0:
-        #             progress = initial_balance
-        #         else:
-        #             progress = float(options.get('lines_progress', initial_balance))
-        #         domain_lines = []
-        #         amls = grouped_partners[partner]['lines']
-
-        #         remaining_lines = 0
-        #         if not context.get('print_mode'):
-        #             remaining_lines = grouped_partners[partner]['total_lines'] - offset - len(amls)
-
-        #         for line in amls:
-        #             if options.get('cash_basis'):
-        #                 line_debit = line.debit_cash_basis
-        #                 line_credit = line.credit_cash_basis
-        #             else:
-        #                 line_debit = line.debit
-        #                 line_credit = line.credit
-        #             progress_before = progress
-        #             progress = progress + line_debit - line_credit
-        #             caret_type = 'account.move'
-        #             if line.invoice_id:
-        #                 caret_type = 'account.invoice.in' if line.invoice_id.type in ('in_refund', 'in_invoice') else 'account.invoice.out'
-        #             elif line.payment_id:
-        #                 caret_type = 'account.payment'
-        #             domain_columns = [line.journal_id.code, line.account_id.code, self._format_aml_name(line), line.date_maturity,
-        #                               line.full_reconcile_id.name, self.format_value(progress_before),
-        #                               line_debit != 0 and self.format_value(line_debit) or '',
-        #                               line_credit != 0 and self.format_value(line_credit) or '']
-        #             if self.user_has_groups('base.group_multi_currency'):
-        #                 domain_columns.append(self.format_value(line.amount_currency, currency=line.currency_id) if line.amount_currency != 0 else '')
-        #             domain_columns.append(self.format_value(progress))
-        #             domain_lines.append({
-        #                 'id': line.id,
-        #                 'parent_id': 'partner_' + str(partner.id),
-        #                 'name': line.date,
-        #                 'columns': [{'name': v} for v in domain_columns],
-        #                 'caret_options': caret_type,
-        #                 'level': 4,
-        #             })
-
-        #         # load more
-        #         if remaining_lines > 0:
-        #             domain_lines.append({
-        #                 'id': 'loadmore_%s' % partner.id,
-        #                 'offset': offset + self.MAX_LINES,
-        #                 'progress': progress,
-        #                 'class': 'o_account_reports_load_more text-center',
-        #                 'parent_id': 'partner_%s' % partner.id,
-        #                 'name': _('Load more... (%s remaining)') % remaining_lines,
-        #                 'colspan': 10 if self.user_has_groups('base.group_multi_currency') else 9,
-        #                 'columns': [{}],
-        #             })
-        #         lines += domain_lines
-
-       
-        # return lines
 
     def _build_options(self, previous_options=None):
         options = super(GstReport, self)._build_options(previous_options)
