@@ -31,7 +31,7 @@ class GstReport(models.TransientModel):
         templates = super(GstReport, self)._get_templates()
         # templates['main_template'] = 'hv_gst_report.hv_main_template_gst_report'
         templates['line_template'] = 'hv_gst_report.hv_line_template_gst_report'
-        templates['search_template'] = 'hv_gst_report.hv_search_template_gst_report'
+        # templates['search_template'] = 'hv_gst_report.hv_search_template_gst_report'
         return templates
 
     def _get_columns_name(self, options):
@@ -339,6 +339,13 @@ class GstReport(models.TransientModel):
         if self._name != 'hv.gst.report':
             return super(GstReport, self).get_report_filename(options)
         return options['reportname'].lower().replace(' ', '_')
+
+    def _set_context(self, options):
+        if self._name != 'hv.gst.report':
+            return super(GstReport, self)._set_context(options)
+        ctx = super(GstReport, self)._set_context(options)
+        ctx['partner_ids'] = self.env['account.tax'].browse([int(pid) for pid in options['partner_ids']])
+        return ctx
 
     @api.model
     def _get_report_name(self):
