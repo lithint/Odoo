@@ -13,13 +13,35 @@
             </xpath>
         </template> -->
        
-        <!-- <template id="hv_search_template_extra_options" inherit_id="account_reports.search_template_extra_options" primary="True">
+        <template id="hv_search_template_extra_options" inherit_id="account_reports.search_template_extra_options" primary="True">
             <div class="dropdown-menu o_filters_menu" role="menu">
-                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('gst_all') != None" title="All GST" data-filter="gst_all">Show All GST</a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m0') != None" title="Filter" data-filter="tm0" multiple="multiple"><t t-esc="gst_all[0][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m1')  != None" title="Filter" data-filter="tm1" multiple="multiple"><t t-esc="gst_all[1][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m2')  != None" title="Filter" data-filter="tm2" multiple="multiple"><t t-esc="gst_all[2][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m3')  != None" title="Filter" data-filter="tm3" multiple="multiple"><t t-esc="gst_all[3][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m4')  != None" title="Filter" data-filter="tm4" multiple="multiple"><t t-esc="gst_all[4][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m5')  != None" title="Filter" data-filter="tm5" multiple="multiple"><t t-esc="gst_all[5][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m6')  != None" title="Filter" data-filter="tm6" multiple="multiple"><t t-esc="gst_all[6][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m7')  != None" title="Filter" data-filter="tm7" multiple="multiple"><t t-esc="gst_all[7][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m8')  != None" title="Filter" data-filter="tm8" multiple="multiple"><t t-esc="gst_all[8][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m9')  != None" title="Filter" data-filter="tm9" multiple="multiple"><t t-esc="gst_all[9][1]" /></a>
+                
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m10') != None" title="Filter" data-filter="tm10" multiple="multiple"><t t-esc="gst_all[10][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m11')  != None" title="Filter" data-filter="tm11" multiple="multiple"><t t-esc="gst_all[11][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m12')  != None" title="Filter" data-filter="tm12" multiple="multiple"><t t-esc="gst_all[12][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m13')  != None" title="Filter" data-filter="tm13" multiple="multiple"><t t-esc="gst_all[13][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m14')  != None" title="Filter" data-filter="tm14" multiple="multiple"><t t-esc="gst_all[14][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m15')  != None" title="Filter" data-filter="tm15" multiple="multiple"><t t-esc="gst_all[15][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m16')  != None" title="Filter" data-filter="tm16" multiple="multiple"><t t-esc="gst_all[16][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m17')  != None" title="Filter" data-filter="tm17" multiple="multiple"><t t-esc="gst_all[17][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m18')  != None" title="Filter" data-filter="tm18" multiple="multiple"><t t-esc="gst_all[18][1]" /></a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m19')  != None" title="Filter" data-filter="tm19" multiple="multiple"><t t-esc="gst_all[19][1]" /></a>
+            
+                <!-- <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('gst_all') != None" title="All GST" data-filter="gst_all[0]">Show All GST</a>
                 <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('gst_with_tax') != None" title="GST with tax account" data-filter="gst_with_tax">Show GST with Tax Account</a>
-                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('gst_without_tax') != None" title="GST without tax account" data-filter="gst_without_tax">Show GST without Tax Account</a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('gst_without_tax') != None" title="GST without tax account" data-filter="gst_without_tax">Show GST without Tax Account</a> -->
             </div>
-        </template> -->
+        </template>
 
         <template id="hv_search_template_gst" >
             <a t-if="options.get('partner')" type="button" class="dropdown-toggle account_partner_filter" data-toggle="dropdown">
@@ -39,12 +61,12 @@
         </template>
         
         <template id="hv_search_template_gst_report" inherit_id="account_reports.search_template" primary="True">
-            <xpath expr="//div[hasclass('o_account_reports_filter_partner')]/*[last()]" position="replace">
+            <!-- <xpath expr="//div[hasclass('o_account_reports_filter_partner')]/*[last()]" position="replace">
                 <t t-call="hv_gst_report.hv_search_template_gst"/>
-            </xpath>        
-            <!-- <xpath expr="//div[hasclass('o_account_reports_filter_bool')]/*[last()]" position="replace">
+            </xpath>         -->
+            <xpath expr="//div[hasclass('o_account_reports_filter_bool')]/*[last()]" position="replace">
                 <t t-call="hv_gst_report.hv_search_template_extra_options"/>
-            </xpath> -->
+            </xpath>
         </template>
 
         <template id="hv_line_template_gst_report" inherit_id="account_reports.line_template" primary="True">
