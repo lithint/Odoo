@@ -20,18 +20,25 @@ class GstReport(models.TransientModel):
     _description = 'GST Report '
     filter_date = {'date_from': '', 'date_to': '', 'filter': 'this_month'}
     filter_unfold_all = False
+    filter_partner = True
+    filter_reporttype = ''
+    filter_export_excel = False
+    
     MAX_LINES = None
 
 
     def _get_templates(self):
         templates = super(GstReport, self)._get_templates()
-        # templates['main_template'] = 'hv_gst_report.hv_gst_report_template'
+        # templates['main_template'] = 'hv_gst_report.hv_main_template_gst_report'
+        templates['line_template'] = 'hv_gst_report.hv_line_template_gst_report'
+        templates['search_template'] = 'hv_gst_report.hv_search_template_gst_report'
         return templates
 
     def _get_columns_name(self, options):
         columns = [
-            {'name': _('Transaction Type')},
             {'name': _('Tax Code')},
+            {'name': _('Journal Entry')},
+            {'name': _('Transaction Type')},
             {'name': _('Transaction Date') , 'class': 'date'},
             {'name': _('Document Number')},
             {'name': _('Net Amount'), 'class': 'number'},
@@ -45,6 +52,7 @@ class GstReport(models.TransientModel):
             return True
         saveunfold = options['unfold_all']
         options['unfold_all'] = True
+        options['export_excel'] = True
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         sheet = workbook.add_worksheet(options.get('reportname')[:31])
@@ -69,19 +77,23 @@ class GstReport(models.TransientModel):
         domain_style_right = workbook.add_format({'font_name': 'Arial', 'italic': True, 'right': 2})
         upper_line_style = workbook.add_format({'font_name': 'Arial', 'top': 2})
 
-        sheet.set_column(0, 0, 20) #  Set the first column width to 60
-        sheet.set_column(1, 2, 50) #  Set the first column width to 60
-        sheet.set_column(2, 3, 20) #  Set the first column width to 20
-        sheet.set_column(4, 5, 15) #  Set the first column width to 15
+        sheet.set_column(0, 0, 45) #  Set the first column width to 60
+        sheet.set_column(1, 1, 15) #  Set the first column width to 60
+        sheet.set_column(2, 2, 18) #  Set the first column width to 60
+        sheet.set_column(3, 3, 15) #  Set the first column width to 60
+        sheet.set_column(4, 4, 18) #  Set the first column width to 60
+        sheet.set_column(5, 6, 14) #  Set the first column width to 15
 
         super_columns = self._get_super_columns(options)
         y_offset = bool(super_columns.get('columns')) and 1 or 0
         
+        convert_date = self.env['ir.qweb.field.date'].value_to_html
+
         f16_style = workbook.add_format({'font_name': 'Arial', 'bold': True, 'font_size': 18,'align': 'center'})
         f14_style = workbook.add_format({'font_name': 'Arial', 'bold': True, 'font_size': 16,'align': 'center'})
         sheet.write(0, 2, self.env.user.company_id.name, f14_style)
         sheet.write(1, 2, options.get('reportname'), f16_style)
-        sheet.write(2, 2, options.get('date').get('date_from')+ ' - ' + options.get('date').get('date_to'), f14_style)
+        sheet.write(2, 2, convert_date('%s' % (options.get('date').get('date_from')), {'format': 'dd MMM YYYY'})+ ' - ' + convert_date('%s' % (options.get('date').get('date_to')), {'format': 'dd MMM YYYY'}), f14_style)
         y_offset = 4
 
         sheet.write(y_offset, 0, '', title_style)
@@ -172,26 +184,31 @@ class GstReport(models.TransientModel):
         response.stream.write(output.read())
         output.close()
         options['unfold_all'] = saveunfold
+        options['export_excel'] = False
 
     @api.model
     def _get_lines(self, options, line_id=None):
         convert_date = self.env['ir.qweb.field.date'].value_to_html
         lines = []
+        tax_cond = ''
+        partner_ids = options.get('partner_ids')
+        if len(partner_ids)>0:
+            tax_cond = 'and b.id in (%s)' % (', '.join(['%s' % (id) for id in partner_ids]))
+
         if not line_id:
-            select = """select c.id, c.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
-                    from account_move_line a, account_journal c, account_tax b
-                    where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
-                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use = '%s' and a.journal_id=c.id
-                    group by c.id, c.name order by c.name
-                """  % (options.get('date').get('date_from'), datetime.strptime(options.get('date').get('date_to'), '%Y-%m-%d').date()+timedelta(days=1), options.get('reporttype'))
+            select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
+                    from account_move_line a, account_tax b
+                    where a.tax_line_id is not null and a.date>'%s' and a.date<'%s'
+                    and a.tax_line_id=b.id and b.type_tax_use = '%s' %s
+                    group by b.id, b.name order by b.name
+                """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), tax_cond)
         else:
-            select = """select c.id, c.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
-                    from account_move_line a, account_journal c, account_tax b
-                    where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
-                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use = '%s'
-                    and a.journal_id=c.id and c.id=%s
-                    group by c.id, c.name order by c.name
-                """  % (options.get('date').get('date_from'), datetime.strptime(options.get('date').get('date_to'), '%Y-%m-%d').date()+timedelta(days=1), options.get('reporttype'), line_id.split('_')[1])
+            select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
+                    from account_move_line a, account_tax b
+                    where a.tax_line_id is not null and a.date>'%s' and a.date<'%s'
+                    and a.tax_line_id=b.id and b.type_tax_use = '%s' and b.id=%s
+                    group by b.id, b.name order by b.name
+                """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), line_id.split('_')[1])
 
         self.env.cr.execute(select, [])
         results = self.env.cr.dictfetchall()
@@ -201,28 +218,28 @@ class GstReport(models.TransientModel):
         current_id = 0
         total_net = 0
         total_tax = 0
-
         for values in results:
             total_net += values['net']
             total_tax += values['tax']
             current_id = values['id']
             lines.append({
-                    'id': 'journal_%s' % (current_id),
+                    'id': 'tax_%s' % (current_id),
                     'name': '%s' % (values['name']),
                     'level': 2,
-                    'columns': [{'name': n} for n in ['', '', '', self.format_value(values['net']), self.format_value(values['tax'])]],
+                    'columns': [{'name': n} for n in ['', '', '', '', self.format_value(values['net']), self.format_value(values['tax'])]],
                     'unfoldable': True,
-                    'unfolded': 'journal_%s' % (current_id)  in options.get('unfolded_lines') or options.get('unfold_all'),
+                    'unfolded': 'tax_%s' % (current_id)  in options.get('unfolded_lines') or options.get('unfold_all'),
                 })
 
-            if 'journal_%s' % (current_id) in options.get('unfolded_lines') or options.get('unfold_all'):
-                select = """select a.id, a.name, a.create_date, a.tax_base_amount net, abs(a.balance) tax,
-                    case when trim(a.ref)='' or a.ref is null then d.name else a.ref end as ref
+            if 'tax_%s' % (current_id) in options.get('unfolded_lines') or options.get('unfold_all'):
+                select = """select a.id, a.name, c.name as transtype, a.date, a.tax_base_amount net, abs(a.balance) tax,
+                    case when trim(a.ref)='' or a.ref is null then d.name else a.ref end as ref,
+                    a.tax_line_id, a.journal_id, a.invoice_id, a.move_id, a.payment_id, d.name as jentry
                     from account_move_line a, account_journal c ,account_tax b, account_move d
-                    where a.tax_line_id is not null and a.create_date>'%s'  and a.create_date<'%s'
+                    where a.tax_line_id is not null and a.date>'%s'  and a.date<'%s'
                     and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use = '%s'
-                    and a.move_id=d.id and a.journal_id=c.id and c.id =%s order by a.create_date
-                """  % (options.get('date').get('date_from'), datetime.strptime(options.get('date').get('date_to'), '%Y-%m-%d').date()+timedelta(days=1), options.get('reporttype'), current_id)
+                    and a.move_id=d.id and a.journal_id=c.id and b.id =%s order by a.date
+                """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), current_id)
 
                 self.env.cr.execute(select, [])
                 results1 = self.env.cr.dictfetchall()
@@ -230,16 +247,22 @@ class GstReport(models.TransientModel):
                     # # First, we add the total of the previous account line, if there was one
                     # if lines and lines[-1]['id'].startswith('month'):
                     #     lines.append(self._get_total(current_journal, current_account, results))
+                    caret_type = 'account.move'
+                    if values1['invoice_id']:
+                        caret_type = 'account.invoice.out' if options.get('reporttype') == 'sale' else 'account.invoice.in'
+                    elif values1['payment_id']:
+                        caret_type = 'account.payment'
                     lines.append({
-                        'id':  'line_%s' % (values1['id']),
-                        'name': '',
+                        'id': values1['id'],
+                        'name': values1['name'],
                         'level': 4,
-                        'parent_id': 'journal_%s' % (current_id) ,
-                        'columns': [{'name': n} for n in [values1['name'], convert_date('%s-01' % (values1['create_date']), {'format': 'YYYY-MM-dd'}), values1['ref'], self.format_value(values1['net']), self.format_value(values1['tax'])]],
+                        'caret_options': caret_type if options.get('export_excel')==False else '',
+                        'parent_id': 'tax_%s' % (current_id) ,
+                        'columns': [{'name': n} for n in [values1['jentry'], values1['transtype'], convert_date('%s' % (values1['date']), {'format': 'YYYY-MM-dd'}), values1['ref'], self.format_value(values1['net']), self.format_value(values1['tax'])]],
                     })
 
         if not line_id:
-            total_columns = ['', '', '', self.format_value(total_net), self.format_value(total_tax)]
+            total_columns = ['', '', '', '', self.format_value(total_net), self.format_value(total_tax)]
             lines.append({
                 'id': 'grouped_total',
                 'name': _('Total'),
@@ -255,18 +278,61 @@ class GstReport(models.TransientModel):
         # if not line_id:
         #     lines.extend(self._get_line_total_per_month(options, values['company_id'], results))
         return lines
-
-        
         # total_initial_balance = total_debit = total_credit = total_balance = 0.0
+
+    def get_report_informations(self, options):
+        if self._name != 'hv.gst.report':
+            return super(GstReport, self).get_report_informations(options)
+        
+        options = self._get_options(options)
+        # apply date and date_comparison filter
+        self._apply_date_filter(options)
+        searchview_dict = {'options': options, 'context': self.env.context}
+        
+        select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
+                from account_move_line a, account_tax b
+                where a.tax_line_id is not null and a.date>'%s' and a.date<'%s' and a.tax_line_id=b.id and b.type_tax_use = '%s' 
+                group by b.id, b.name order by b.name
+            """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'))
+
+        self.env.cr.execute(select, [])
+        results = self.env.cr.dictfetchall()
+        searchview_dict['res_partners'] = [(values['id'], values['name']) for values in results]
+        searchview_dict['res_partner_categories'] = []
+        options['selected_partner_ids'] = []
+        options['selected_partner_categories'] = []
+
+        # Check whether there are unposted entries for the selected period or not (if the report allows it)
+        if options.get('date') and options.get('all_entries') is not None:
+            date_to = options['date'].get('date_to') or options['date'].get('date') or fields.Date.today()
+            period_domain = [('state', '=', 'draft'), ('date', '<=', date_to)]
+            options['unposted_in_period'] = bool(self.env['account.move'].search_count(period_domain))
+
+        report_manager = self._get_report_manager(options)
+
+        info = {'options': options,
+                'context': self.env.context,
+                'report_manager_id': report_manager.id,
+                'footnotes': [{'id': f.id, 'line': f.line, 'text': f.text} for f in report_manager.footnotes_ids],
+                'buttons': self._get_reports_buttons(),
+                'main_html': self.get_html(options),
+                'searchview_html': self.env['ir.ui.view'].render_template(self._get_templates().get('search_template', 'account_report.search_template'), values=searchview_dict),
+                }
+        return info
 
     def _build_options(self, previous_options=None):
         options = super(GstReport, self)._build_options(previous_options)
         if self._context.get('reporttype') == 'sale':
             options['reportname'] =  _('GST on Sales')
+            if options['reporttype'] != 'sale':
+                options['partner_ids'] = []
             options['reporttype'] =  'sale'
         else:
             options['reportname'] =  _('GST on Purchases')
+            if options['reporttype'] != 'purchase':
+                options['partner_ids'] = []
             options['reporttype'] =  'purchase'
+
         return options
 
     def get_report_filename(self, options):
