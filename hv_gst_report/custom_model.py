@@ -237,7 +237,7 @@ class GstReport(models.TransientModel):
                     a.tax_line_id, a.journal_id, a.invoice_id, a.move_id, a.payment_id, d.name as jentry
                     from account_move_line a, account_journal c ,account_tax b, account_move d
                     where a.tax_line_id is not null and a.date>'%s'  and a.date<'%s'
-                    and a.tax_line_id=b.id and b.account_id is not null and b.type_tax_use = '%s'
+                    and a.tax_line_id=b.id and b.type_tax_use = '%s'
                     and a.move_id=d.id and a.journal_id=c.id and b.id =%s order by a.date
                 """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), current_id)
 
@@ -299,7 +299,7 @@ class GstReport(models.TransientModel):
         results = self.env.cr.dictfetchall()
         searchview_dict['res_partners'] = [(values['id'], values['name']) for values in results]
         searchview_dict['res_partner_categories'] = []
-        options['selected_partner_ids'] = []
+        options['selected_partner_ids'] = [dict(searchview_dict['res_partners'])[int(pid)] for pid in options['partner_ids']]
         options['selected_partner_categories'] = []
 
         # Check whether there are unposted entries for the selected period or not (if the report allows it)
