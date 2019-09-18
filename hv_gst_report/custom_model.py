@@ -20,7 +20,26 @@ class GstReport(models.TransientModel):
     _description = 'GST Report '
     filter_date = {'date_from': '', 'date_to': '', 'filter': 'this_month'}
     filter_unfold_all = False
-    filter_partner = True
+    filter_tm0 = True
+    filter_tm1 = True
+    filter_tm2 = True
+    filter_tm3 = True
+    filter_tm4 = True
+    filter_tm5 = True
+    filter_tm6 = True
+    filter_tm7 = True
+    filter_tm8 = True
+    filter_tm9 = True
+    filter_tm10 = True
+    filter_tm11 = True
+    filter_tm12 = True
+    filter_tm13 = True
+    filter_tm14 = True
+    filter_tm15 = True
+    filter_tm16 = True
+    filter_tm17 = True
+    filter_tm18 = True
+    filter_tm19 = True
     filter_reporttype = ''
     filter_export_excel = False
     
@@ -31,7 +50,7 @@ class GstReport(models.TransientModel):
         templates = super(GstReport, self)._get_templates()
         # templates['main_template'] = 'hv_gst_report.hv_main_template_gst_report'
         templates['line_template'] = 'hv_gst_report.hv_line_template_gst_report'
-        # templates['search_template'] = 'hv_gst_report.hv_search_template_gst_report'
+        templates['search_template'] = 'hv_gst_report.hv_search_template_gst_report'
         return templates
 
     def _get_columns_name(self, options):
@@ -190,12 +209,12 @@ class GstReport(models.TransientModel):
     def _get_lines(self, options, line_id=None):
         convert_date = self.env['ir.qweb.field.date'].value_to_html
         lines = []
-        tax_cond = ''
-        partner_ids = options.get('partner_ids')
-        if len(partner_ids)>0:
-            tax_cond = 'and b.id in (%s)' % (', '.join(['%s' % (id) for id in partner_ids]))
-
         if not line_id:
+            tax_cond = (', '.join(['%s' % (options['m%s' % (id)]) for id in range(20) if options['tm%s' % (id)] == True and options['m%s' % (id)]!= None ]))
+            if len(tax_cond)>0:
+                tax_cond = 'and b.id in (%s)' % (tax_cond)
+            else:
+                tax_cond = 'and b.id = 0'
             select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
                     from account_move_line a, account_tax b
                     where a.tax_line_id is not null and a.date>'%s' and a.date<'%s'
@@ -297,10 +316,11 @@ class GstReport(models.TransientModel):
 
         self.env.cr.execute(select, [])
         results = self.env.cr.dictfetchall()
-        searchview_dict['res_partners'] = [(values['id'], values['name']) for values in results]
-        searchview_dict['res_partner_categories'] = []
-        options['selected_partner_ids'] = [dict(searchview_dict['res_partners'])[int(pid)] for pid in options['partner_ids']]
-        options['selected_partner_categories'] = []
+        searchview_dict['gst_all'] = [(values['id'], values['name']) for values in results]
+        i = 0
+        for values in results:
+            options['m%s' % (i)] = values['id']
+            i += 1
 
         # Check whether there are unposted entries for the selected period or not (if the report allows it)
         if options.get('date') and options.get('all_entries') is not None:
@@ -325,14 +345,17 @@ class GstReport(models.TransientModel):
         if self._context.get('reporttype') == 'sale':
             options['reportname'] =  _('GST on Sales')
             if options['reporttype'] != 'sale':
-                options['partner_ids'] = []
+                for x in range(20):
+                    options['tm%s' % (x)] = True
             options['reporttype'] =  'sale'
         else:
             options['reportname'] =  _('GST on Purchases')
             if options['reporttype'] != 'purchase':
-                options['partner_ids'] = []
+                for x in range(20):
+                    options['tm%s' % (x)] = True
             options['reporttype'] =  'purchase'
-
+        for x in range(20):
+            options['m%s' % (x)] =  None
         return options
 
     def get_report_filename(self, options):
@@ -340,12 +363,12 @@ class GstReport(models.TransientModel):
             return super(GstReport, self).get_report_filename(options)
         return options['reportname'].lower().replace(' ', '_')
 
-    def _set_context(self, options):
-        if self._name != 'hv.gst.report':
-            return super(GstReport, self)._set_context(options)
-        ctx = super(GstReport, self)._set_context(options)
-        ctx['partner_ids'] = self.env['account.tax'].browse([int(pid) for pid in options['partner_ids']])
-        return ctx
+    # def _set_context(self, options):
+    #     if self._name != 'hv.gst.report':
+    #         return super(GstReport, self)._set_context(options)
+    #     ctx = super(GstReport, self)._set_context(options)
+    #     ctx['partner_ids'] = self.env['account.tax'].browse([int(pid) for pid in options['partner_ids']])
+    #     return ctx
 
     @api.model
     def _get_report_name(self):
