@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- <template id="hv_gst_report_template" inherit_id="account_reports.main_template" primary="True">
+        <!-- <template id="hv_main_template_gst_report" inherit_id="account_reports.main_template" primary="True">
             <xpath expr="//div[hasclass('o_account_reports_header')]" position="replace">
                 <h2><t t-esc="report.get('name')"></t></h2>
 
@@ -12,7 +12,47 @@
                 <t t-call="account_reports.filter_info_template"/>
             </xpath>
         </template> -->
+       
+        <!-- <template id="hv_search_template_extra_options" inherit_id="account_reports.search_template_extra_options" primary="True">
+            <div class="dropdown-menu o_filters_menu" role="menu">
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('gst_all') != None" title="All GST" data-filter="gst_all">Show All GST</a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('gst_with_tax') != None" title="GST with tax account" data-filter="gst_with_tax">Show GST with Tax Account</a>
+                <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('gst_without_tax') != None" title="GST without tax account" data-filter="gst_without_tax">Show GST without Tax Account</a>
+            </div>
+        </template> -->
 
+        <template id="hv_search_template_gst" >
+            <a t-if="options.get('partner')" type="button" class="dropdown-toggle account_partner_filter" data-toggle="dropdown">
+                <span class="fa fa-folder-open"/>Taxes
+            </a>
+            <div class="dropdown-menu o_filters_menu" role="menu">
+                <div t-if="options.get('partner') != None" class="o_account_report_search" role="menuitem">
+                    <b>Taxes</b><br />
+                    <select class="js_account_partner_auto_complete o_account_report_select" data-filter="res_partners" multiple="multiple">
+                        <t t-foreach="res_partners" t-as="a">
+                            <option t-att-value="a[0]"><t t-esc="a[1]" /></option>
+                        </t>
+                    </select>
+                </div>
+                <div class="dropdown-divider" role="separator"></div>
+            </div>
+        </template>
+        
+        <template id="hv_search_template_gst_report" inherit_id="account_reports.search_template" primary="True">
+            <xpath expr="//div[hasclass('o_account_reports_filter_partner')]/*[last()]" position="replace">
+                <t t-call="hv_gst_report.hv_search_template_gst"/>
+            </xpath>        
+            <!-- <xpath expr="//div[hasclass('o_account_reports_filter_bool')]/*[last()]" position="replace">
+                <t t-call="hv_gst_report.hv_search_template_extra_options"/>
+            </xpath> -->
+        </template>
+
+        <template id="hv_line_template_gst_report" inherit_id="account_reports.line_template" primary="True">
+            <xpath expr="//div[hasclass('o_account_reports_domain_dropdown')]/*[last()]" position="before">
+                <a role="menuitem" tabindex="-1" t-att-data-id="line['id']" action="open_document" groups="account.group_account_user" class="dropdown-item">View Journal Entry</a>
+            </xpath>
+        </template>
+        
         <record id="action_gst_on_sales_report" model="ir.actions.client">
             <field name="name">GST on Sales</field>
             <field name="tag">account_report</field>
