@@ -215,16 +215,16 @@ class GstReport(models.TransientModel):
                 tax_cond = 'and b.id in (%s)' % (tax_cond)
             else:
                 tax_cond = 'and b.id = 0'
-            select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
+            select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(a.balance) tax 
                     from account_move_line a, account_tax b
-                    where a.tax_line_id is not null and a.date>'%s' and a.date<'%s'
+                    where a.tax_line_id is not null and a.date>='%s' and a.date<='%s'
                     and a.tax_line_id=b.id and b.type_tax_use = '%s' %s
                     group by b.id, b.name order by b.name
                 """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), tax_cond)
         else:
-            select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
+            select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(a.balance) tax 
                     from account_move_line a, account_tax b
-                    where a.tax_line_id is not null and a.date>'%s' and a.date<'%s'
+                    where a.tax_line_id is not null and a.date>='%s' and a.date<='%s'
                     and a.tax_line_id=b.id and b.type_tax_use = '%s' and b.id=%s
                     group by b.id, b.name order by b.name
                 """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), line_id.split('_')[1])
@@ -251,11 +251,11 @@ class GstReport(models.TransientModel):
                 })
 
             if 'tax_%s' % (current_id) in options.get('unfolded_lines') or options.get('unfold_all'):
-                select = """select a.id, a.name, c.name as transtype, a.date, a.tax_base_amount net, abs(a.balance) tax,
+                select = """select a.id, a.name, c.name as transtype, a.date, a.tax_base_amount net, a.balance as tax,
                     case when trim(a.ref)='' or a.ref is null then d.name else a.ref end as ref,
                     a.tax_line_id, a.journal_id, a.invoice_id, a.move_id, a.payment_id, d.name as jentry
                     from account_move_line a, account_journal c ,account_tax b, account_move d
-                    where a.tax_line_id is not null and a.date>'%s'  and a.date<'%s'
+                    where a.tax_line_id is not null and a.date>='%s'  and a.date<='%s'
                     and a.tax_line_id=b.id and b.type_tax_use = '%s'
                     and a.move_id=d.id and a.journal_id=c.id and b.id =%s order by a.date
                 """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), current_id)
@@ -308,9 +308,9 @@ class GstReport(models.TransientModel):
         self._apply_date_filter(options)
         searchview_dict = {'options': options, 'context': self.env.context}
         
-        select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(abs(a.balance)) tax 
+        select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(a.balance) tax 
                 from account_move_line a, account_tax b
-                where a.tax_line_id is not null and a.date>'%s' and a.date<'%s' and a.tax_line_id=b.id and b.type_tax_use = '%s' 
+                where a.tax_line_id is not null and a.date>='%s' and a.date<='%s' and a.tax_line_id=b.id and b.type_tax_use = '%s' 
                 group by b.id, b.name order by b.name
             """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'))
 
