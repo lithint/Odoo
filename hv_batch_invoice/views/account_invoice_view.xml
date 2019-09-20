@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<record id="inherite_invoice_supplier_tree" model="ir.ui.view">
+	    <field name="name">hv_batch_invoice_inherite_invoice_supplier_tree</field>
+	    <field name="model">account.invoice</field>
+	    <field name="inherit_id" ref="account.invoice_supplier_tree"/>
+	    <field name="arch" type="xml">
+	        <data>
+	            <xpath expr="//field[@name='vendor_display_name']" position="replace">
+	                <field name="vendor_display_name" groups="base.group_user" string="Customer"/>
+	            </xpath>
+	        </data>
+	    </field>
+	</record>
+
+	<!-- Inherited Bill Form View from account module -->
+    <record id="invoice_supplier_form_inherit" model="ir.ui.view">
+        <field name="name">account.invoice.supplier.form.inherit</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="account.invoice_supplier_form"/>
+        <field name="arch" type="xml">
+        	<xpath expr="//button[@name='action_invoice_open']" position="attributes">
+        		<attribute name="states">draft,on_hold</attribute>
+    		</xpath>
+        	<xpath expr="//button[@name='action_invoice_draft']" position="attributes">
+        		<attribute name="states">cancel,on_hold</attribute>
+    		</xpath>
+        	<xpath expr="//button[@name='action_invoice_draft']" position="after">
+        		<button name="action_invoice_on_hold"
+        			states="draft,open,cancel"
+        			string="On Hold" type="object"
+        			groups="account.group_account_invoice"/>
+    		</xpath>
+        	<xpath expr="//field[@name='state']" position="attributes">
+        		<attribute name="statusbar_visible">draft,open,on_hold,paid</attribute>
+    		</xpath>
+    	</field>
+	</record>
+
+	<!-- Inherited Bill Form View from account_cancel module -->
+    <record id="invoice_supplier_cancel_form_inherit_gentec"
+    		model="ir.ui.view">
+        <field name="name">invoice.supplier.cancel.form.inherit</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id"
+        		ref="account_cancel.invoice_supplier_cancel_form_inherit"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_invoice_cancel']"
+            		position="attributes">
+        		<attribute name="states">draft,open,in_payment,paid,on_hold</attribute>
+    		</xpath>
+        </field>
+    </record>
+</odoo>

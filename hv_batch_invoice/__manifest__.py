@@ -23,17 +23,21 @@
 
 {
     'name': 'Batch Invoice',
-    'version': '1.0.1',
+    'version': '12.0.0.1.0',
+    'sequence': 1,
     'category': 'Accounting Invoice',
-    'summary': 'Accounting Invoice',
-    'description': "",
+    'summary': """Accounting Invoice""",
+    'description': """Accounting Invoice""",
     'author': "Havi Technology",
     'website': "havi.com.au",
-    'depends': ['base','account','hv_message'],
+    'depends': [
+        'account_cancel',
+        'hv_message'
+    ],
     'data': [
-        'ir.model.access.csv',
-        'custom_data.xml',
-        ],
-    'demo_xml': [],
+        'security/ir.model.access.csv',
+        'views/account_invoice_view.xml',
+        'views/custom_data.xml',
+    ],
     'installable': True,
 }

@@ -70,18 +70,6 @@
             </field>
         </record>
         
-        <record id="inherite_invoice_supplier_tree" model="ir.ui.view">
-            <field name="name">hv_batch_invoice_inherite_invoice_supplier_tree</field>
-            <field name="model">account.invoice</field>
-            <field name="inherit_id" ref="account.invoice_supplier_tree"/>
-            <field name="arch" type="xml">
-                <data>
-                    <xpath expr="//field[@name='vendor_display_name']" position="replace">
-                        <field name="vendor_display_name" groups="base.group_user" string="Customer"/>
-                    </xpath>
-                </data>
-            </field>
-        </record>
 <!--  =========================================================================================== -->
         <record id="view_account_payment_from_invoices" model="ir.ui.view">
             <field name="name">hv.batch.invoice.account.register.payments.wizard</field>
