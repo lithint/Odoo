@@ -87,6 +87,7 @@ class hv_customer_account_invoice(models.Model):
 
 class hv_customer_statement_line(models.Model):
     _name = 'hv.customer.statement.line'
+    _description = 'Customer Statement Line'
 
     customer_id = fields.Many2one(
         'res.partner', string='Customer',
@@ -230,6 +231,7 @@ class hv_customer_statement_line(models.Model):
 
 class hv_customer_statement(models.Model):
     _name = 'hv.customer.statement'
+    _description = 'Customer Statement'
 
     statement_date = fields.Date(
         string='Statement Date', required=True, default=fields.Date.today())
@@ -242,8 +244,10 @@ class hv_customer_statement(models.Model):
     consolidatedsm = fields.Boolean(
         string='Consolidated Statement', default=True, readonly=True)
 
-    line_ids = fields.One2many('hv.customer.statement.line', 'statement_id', string='Customers',
-                               domain=lambda self: [('consolidatedsm', '=', self.consolidatedsm)])
+    line_ids = fields.One2many(
+        'hv.customer.statement.line',
+        'statement_id', string='Customers',
+        domain=lambda self: [('consolidatedsm', '=', self.consolidatedsm)])
     selectall = fields.Boolean(default=False, compute="check_select")
 
     @api.depends("consolidatedsm")

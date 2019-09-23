@@ -70,7 +70,7 @@
             </field>
         </record>
         
-<!--  =========================================================================================== -->
+        <!-- Batch Customer Invoice Payment Form View -->
         <record id="view_account_payment_from_invoices" model="ir.ui.view">
             <field name="name">hv.batch.invoice.account.register.payments.wizard</field>
             <field name="model">account.register.payments</field>
@@ -85,7 +85,8 @@
                         <group>
                             <label for="amount"/>
                             <div name="amount_div" class="o_row">
-                                <field name="amount" attrs="{'readonly': [('multi', '=', True)]}"/>
+                                <field name="amount"
+                                    attrs="{'readonly': [('multi', '=', True)]}"/>
                                 <field name="currency_id"
                                        attrs="{'readonly': [('multi', '=', True)]}"
                                        options="{'no_create': True, 'no_open': True}"
@@ -123,13 +124,16 @@
                         </div>
                     </group>
                     <footer>
-                        <button string='Validate' name="create_payments" type="object" class="btn-primary"/>
+                        <button string='Validate'
+                            name="batch_invoice_payment" type="object"
+                            class="btn-primary"/>
                         <button string="Cancel" class="btn-secondary" special="cancel"/>
                     </footer>
                </form>
             </field>
         </record>
-<!--  =========================================================================================== -->
+
+        <!--  Batch Account Writeoff Tree view -->
          <record id="batch_account_writeoff_tree_view" model="ir.ui.view">
             <field name="name">batch.account.writeoff.tree</field>
             <field name="model">batch.account.writeoff</field>
@@ -142,7 +146,9 @@
             </field>
         </record>
 
-        <record id="batch_account_writeoff_form_view" model="ir.ui.view">
+        <!--  Batch Account Writeoff Form view -->
+        <record id="batch_account_writeoff_form_view"
+                model="ir.ui.view">
             <field name="name">batch.account.writeoff.form</field>
             <field name="model">batch.account.writeoff</field>
             <field name="arch" type="xml">
@@ -158,7 +164,7 @@
                 </form>
             </field>
         </record>
-<!--  =========================================================================================== -->
+        <!--  Batch Invoice Form view -->
         <record id="batch_invoice_form_view" model="ir.ui.view">
             <field name="name">batch.invoice.form</field>
             <field name="model">batch.invoice</field>

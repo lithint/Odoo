@@ -33,26 +33,38 @@ FILE_TYPE_DICT = {
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ('xlsx', xlsx, 'xlrd >= 1.0.0'),
     'application/vnd.oasis.opendocument.spreadsheet': ('ods', odf_ods_reader, 'odfpy')
 }
+
 OPTIONS = {
-    'advanced': False, 
-    'bank_stmt_import': True, 'date_format': '', 'datetime_format': '', 'encoding': 'ascii', 'fields': [], 'float_decimal_separator': '.', 'float_thousand_separator': ',', 'headers': True, 'keep_matches': False, 'name_create_enabled_fields': {'currency_id': False, 'partner_id': False}, 'quoting': '"', 'separator': ','}
+    'advanced': False,
+    'bank_stmt_import': True, 'date_format': '',
+    'datetime_format': '', 'encoding': 'ascii',
+    'fields': [], 'float_decimal_separator': '.',
+    'float_thousand_separator': ',', 'headers': True,
+    'keep_matches': False,
+    'name_create_enabled_fields': {'currency_id': False, 'partner_id': False},
+    'quoting': '"',
+    'separator': ','
+}
 
 module = os.path.dirname(__file__)
-module = module[module.rfind('/')+1:]
+module = module[module.rfind('/') + 1:]
 
 
 class HaviDialog(models.TransientModel):
     _name = 'havi.message'
+    _description = "Havi Message"
 
-    module= fields.Char()
+    module = fields.Char()
     title = fields.Char('Title', readonly=True)
     name = fields.Text('Name', readonly=True)
-    data_file = fields.Binary(string='Select file to import', help='Get your file to import and select them here.')
+    data_file = fields.Binary(string='Select file to import',
+                              help="Get your file to import"
+                              " and select them here.")
     filename = fields.Char(string='File Name')
 
     def get_module(self):
         module = os.path.dirname(__file__)
-        return module[module.rfind('/')+1:]
+        return module[module.rfind('/') + 1:]
 
     @api.multi
     def action_warning(self, message, title=None):
@@ -76,8 +88,8 @@ class HaviDialog(models.TransientModel):
     def action_confirm(self, message, title=None, module=None):
         if not module or not title:
             m = self.create({
-            'title': 'Warning',
-            'name': "To use Confirm dialog box, you must enter Title and Module values:\n\
+                'title': 'Warning',
+                'name': "To use Confirm dialog box, you must enter Title and Module values:\n\
 self.env['havi.message'].with_context(active_model='Your model',batch_invoice_id='Your model id').action_confirm('Message', 'Title', 'Your module name')",
             })
             return {
@@ -111,8 +123,8 @@ self.env['havi.message'].with_context(active_model='Your model',batch_invoice_id
     def action_import(self, message, title=None, module=None):
         if not module or not title:
             m = self.create({
-            'title': 'Warning',
-            'name': "To use Import dialog box, you must enter Title and Module values:\n\
+                'title': 'Warning',
+                'name': "To use Import dialog box, you must enter Title and Module values:\n\
 self.env['havi.message'].with_context(active_model='Your model',batch_invoice_id='Your model id').action_import('Message', 'Title', 'Your module name')",
             })
             return {
@@ -217,7 +229,7 @@ class hv_message(models.TransientModel):\n\
         datas = [
             list(row) for row in pycompat.imap(mapper, rows)
             if any(row)
-        ]  
+        ]
         return fields, datas
 
     def _read_csv(self, csv_data, options):
@@ -226,7 +238,8 @@ class hv_message(models.TransientModel):\n\
         """
         encoding = options.get('encoding')
         if not encoding:
-            encoding = options['encoding'] = chardet.detect(csv_data)['encoding'].lower()
+            encoding = options['encoding'] = chardet.detect(csv_data)[
+                'encoding'].lower()
 
         if encoding != 'utf-8':
             csv_data = csv_data.decode(encoding).encode('utf-8')
@@ -239,15 +252,16 @@ class hv_message(models.TransientModel):\n\
             for candidate in (',', ';', '\t', ' ', '|', unicodedata.lookup('unit separator')):
                 # pass through the CSV and check if all rows are the same
                 # length & at least 2-wide assume it's the correct one
-                it = pycompat.csv_reader(io.BytesIO(csv_data), quotechar=options['quoting'], delimiter=candidate)
+                it = pycompat.csv_reader(io.BytesIO(csv_data), quotechar=options[
+                                         'quoting'], delimiter=candidate)
                 w = None
                 for row in it:
                     width = len(row)
                     if w is None:
                         w = width
                     if width == 1 or width != w:
-                        break # next candidate
-                else: # nobreak
+                        break  # next candidate
+                else:  # nobreak
                     separator = options['separator'] = candidate
                     break
 

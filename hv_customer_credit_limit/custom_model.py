@@ -22,20 +22,25 @@ class hv_credit_limit_product(models.Model):
     def get_account_manager(self):
         self.account_manager = self.user_has_groups('account.group_account_manager')
 
+
 class hv_credit_limit_sale_order_confirm(models.TransientModel):
     _name = 'sale.order.confirm'
+    _description = 'Sale Order Confirm'
 
     _message = fields.Text(readonly=True)
-    
+
     @api.multi
     def action_overwrite(self):
         sale = self.env['sale.order'].browse(self._context.get('sale_id'))
         sale.confirm_result = 1
         sale.action_confirm()
 
+
 class hv_credit_limit_SaleOrder(models.Model):
     _inherit = "sale.order"
-    confirm_result = fields.Integer(defalut=0, store=False) 
+
+    confirm_result = fields.Integer(defalut=0, store=False)
+
     @api.multi
     def action_confirm(self):
         if self.confirm_result == 1:
@@ -74,5 +79,3 @@ class hv_credit_limit_SaleOrder(models.Model):
                 raise UserError(_message)
         else:
             return super(hv_credit_limit_SaleOrder, self).action_confirm()
-    
-
