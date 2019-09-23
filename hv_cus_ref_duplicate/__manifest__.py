@@ -23,17 +23,20 @@
 
 {
     'name': 'Customer Reference Duplicate Check',
-    'version': '1.0.1',
+    'version': '12.0.1.0.0',
     'category': 'Sale Order',
     'summary': 'Sale Order',
     'description': "",
     'author': "Havi Technology",
     'website': "havi.com.au",
-    'depends': ['base','sale','hv_message'],
+    'depends': [
+        'sale',
+        'hv_message'
+    ],
     'data': [
-        'ir.model.access.csv',
-        'custom_data.xml',
-        ],
+        'security/ir.model.access.csv',
+        'views/custom_data.xml',
+    ],
     'demo_xml': [],
     'installable': True,
 }

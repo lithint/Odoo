@@ -11,6 +11,14 @@ class AccountInvoice(models.Model):
 
     state = fields.Selection(selection_add=[('on_hold', 'On Hold')])
 
+    @api.model
+    def default_get(self, default_fields):
+        """Overridden Default Get to remove the Bank account."""
+        res = super(AccountInvoice, self).default_get(default_fields)
+        if res.get('partner_bank_id', False):
+            res['partner_bank_id'] = False
+        return res
+
     @api.multi
     def action_invoice_on_hold(self):
         """Method to make bill on hold."""
