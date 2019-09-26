@@ -43,7 +43,7 @@ class GstReport(models.TransientModel):
     filter_reporttype = ''
     filter_export_excel = False
     
-    MAX_LINES = None
+    MAX_LINES = 80
 
 
     def _get_templates(self):
@@ -72,6 +72,7 @@ class GstReport(models.TransientModel):
         saveunfold = options['unfold_all']
         options['unfold_all'] = True
         options['export_excel'] = True
+        self.MAX_LINES = None
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         sheet = workbook.add_worksheet(options.get('reportname')[:31])
@@ -204,6 +205,7 @@ class GstReport(models.TransientModel):
         output.close()
         options['unfold_all'] = saveunfold
         options['export_excel'] = False
+        self.MAX_LINES = 80
 
     @api.model
     def _get_lines(self, options, line_id=None):
@@ -212,22 +214,30 @@ class GstReport(models.TransientModel):
         if not line_id:
             tax_cond = (', '.join(['%s' % (options['m%s' % (id)]) for id in range(20) if options['tm%s' % (id)] == True and options['m%s' % (id)]!= None ]))
             if len(tax_cond)>0:
-                tax_cond = 'and b.id in (%s)' % (tax_cond)
+                tax_cond = 'b.id in (%s)' % (tax_cond)
             else:
-                tax_cond = 'and b.id = 0'
-            select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(a.balance) tax 
-                    from account_move_line a, account_tax b
-                    where a.tax_line_id is not null and a.date>='%s' and a.date<='%s'
-                    and a.tax_line_id=b.id and b.type_tax_use = '%s' %s
-                    group by b.id, b.name order by b.name
-                """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), tax_cond)
+                tax_cond = 'b.id = -1'
+            select = """select * from (select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name, 
+sum(case when a.tax_base_amount>0 then a.tax_base_amount else 0 end ) as net, sum(a.balance) tax 
+from account_move_line a inner join
+	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id) g
+	on a.account_id=g.account_id
+	left join account_tax b on a.tax_line_id = b.id
+	left join account_payment f on a.payment_id = f.id
+where a.date>='%s' and a.date<='%s'
+group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name) b where %s
+                """  % (options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), tax_cond)
         else:
-            select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(a.balance) tax 
-                    from account_move_line a, account_tax b
-                    where a.tax_line_id is not null and a.date>='%s' and a.date<='%s'
-                    and a.tax_line_id=b.id and b.type_tax_use = '%s' and b.id=%s
-                    group by b.id, b.name order by b.name
-                """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), line_id.split('_')[1])
+            select = """select * from (select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name, 
+sum(case when a.tax_base_amount>0 then a.tax_base_amount else 0 end ) as net, sum(a.balance) tax 
+from account_move_line a inner join
+	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id) g
+	on a.account_id=g.account_id
+	left join account_tax b on a.tax_line_id = b.id
+	left join account_payment f on a.payment_id = f.id
+where a.date>='%s' and a.date<='%s'
+group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name) b where b.id = %s
+                """  % (options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), line_id.split('_')[1])
 
         self.env.cr.execute(select, [])
         results = self.env.cr.dictfetchall()
@@ -251,14 +261,20 @@ class GstReport(models.TransientModel):
                 })
 
             if 'tax_%s' % (current_id) in options.get('unfolded_lines') or options.get('unfold_all'):
-                select = """select a.id, a.name, c.name as transtype, a.date, a.tax_base_amount net, a.balance as tax,
-                    case when trim(a.ref)='' or a.ref is null then d.name else a.ref end as ref,
-                    a.tax_line_id, a.journal_id, a.invoice_id, a.move_id, a.payment_id, d.name as jentry
-                    from account_move_line a, account_journal c ,account_tax b, account_move d
-                    where a.tax_line_id is not null and a.date>='%s'  and a.date<='%s'
-                    and a.tax_line_id=b.id and b.type_tax_use = '%s'
-                    and a.move_id=d.id and a.journal_id=c.id and b.id =%s order by a.date
-                """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'), current_id)
+                select = """select * from (select a.id, a.name, c.name as transtype, a.date, a.balance as tax,
+case when a.tax_base_amount>0 then a.tax_base_amount else 0 end as net,
+case when b.id is null and f.id is not null then f.name
+	when trim(a.ref)='' or a.ref is null then d.name else a.ref end as ref,
+coalesce(b.id,0) tax_line_id, a.journal_id, a.invoice_id, a.move_id, a.payment_id, d.name as jentry
+from account_move_line a inner join
+	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id) g
+	on a.account_id=g.account_id
+	left join account_tax b on a.tax_line_id = b.id
+	left join account_payment f on a.payment_id = f.id
+	left join account_journal c on a.journal_id=c.id
+	left join account_move d on a.move_id=d.id
+where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date
+                """  % (options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), current_id)
 
                 self.env.cr.execute(select, [])
                 results1 = self.env.cr.dictfetchall()
@@ -308,11 +324,16 @@ class GstReport(models.TransientModel):
         self._apply_date_filter(options)
         searchview_dict = {'options': options, 'context': self.env.context}
         
-        select = """select b.id, b.name,sum(a.tax_base_amount) as net, sum(a.balance) tax 
-                from account_move_line a, account_tax b
-                where a.tax_line_id is not null and a.date>='%s' and a.date<='%s' and a.tax_line_id=b.id and b.type_tax_use = '%s' 
-                group by b.id, b.name order by b.name
-            """  % (options.get('date').get('date_from'), options.get('date').get('date_to'), options.get('reporttype'))
+        select = """select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name, 
+sum(case when a.tax_base_amount>0 then a.tax_base_amount else 0 end ) as net, sum(a.balance) tax 
+from account_move_line a inner join
+	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id) g
+	on a.account_id=g.account_id
+	left join account_tax b on a.tax_line_id = b.id
+	left join account_payment f on a.payment_id = f.id
+where a.date>='%s' and a.date<='%s'
+group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name
+            """  % (options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'))
 
         self.env.cr.execute(select, [])
         results = self.env.cr.dictfetchall()
