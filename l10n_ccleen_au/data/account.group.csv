@@ -1,0 +1,6 @@
+id,name
+account_grp_asset,Asset
+account_grp_liability,Liability
+account_grp_equity,Equity
+account_grp_income,Income
+account_grp_expense,Expense

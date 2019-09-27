@@ -35,7 +35,7 @@
     ],
     'data': [
         'security/ir.model.access.csv',
-        'views/custom_data.xml',
+        'views/custom_data.xml'
     ],
     'demo_xml': [],
     'installable': True,
