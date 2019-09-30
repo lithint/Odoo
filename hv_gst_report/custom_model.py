@@ -61,7 +61,7 @@ class GstReport(models.TransientModel):
             {'name': _('Transaction Date') , 'class': 'date'},
             {'name': _('Document Number')},
             {'name': _('Net Amount'), 'class': 'number'},
-            {'name': _('Tax Amount'), 'class': 'number'}]
+            {'name': _('Tax Amount'), 'class': 'number'},{}]
 
         return columns
 
@@ -219,25 +219,29 @@ class GstReport(models.TransientModel):
                 tax_cond = 'b.id = -1'
             select = """select * from (select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name, 
 sum(case when a.tax_base_amount>0 then a.tax_base_amount else 0 end ) as net, sum(a.balance) tax 
-from account_move_line a inner join
-	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id) g
-	on a.account_id=g.account_id
-	left join account_tax b on a.tax_line_id = b.id
+from (select *, tax_line_id as tax from account_move_line a where account_id in 
+	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
+	union all
+	select a.*, c.id as tax from account_move_line a,account_move_line_account_tax_rel b, account_tax c
+	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
+	left join account_tax b on a.tax = b.id
 	left join account_payment f on a.payment_id = f.id
 where a.date>='%s' and a.date<='%s'
 group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name) b where %s
-                """  % (options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), tax_cond)
+                """  % (options.get('reporttype'), options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), tax_cond)
         else:
             select = """select * from (select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name, 
 sum(case when a.tax_base_amount>0 then a.tax_base_amount else 0 end ) as net, sum(a.balance) tax 
-from account_move_line a inner join
-	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id) g
-	on a.account_id=g.account_id
-	left join account_tax b on a.tax_line_id = b.id
+from (select *, tax_line_id as tax from account_move_line a where account_id in 
+	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
+	union all
+	select a.*, c.id as tax from account_move_line a,account_move_line_account_tax_rel b, account_tax c
+	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
+	left join account_tax b on a.tax = b.id
 	left join account_payment f on a.payment_id = f.id
 where a.date>='%s' and a.date<='%s'
 group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name) b where b.id = %s
-                """  % (options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), line_id.split('_')[1])
+                """  % (options.get('reporttype'), options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), line_id.split('_')[1])
 
         self.env.cr.execute(select, [])
         results = self.env.cr.dictfetchall()
@@ -266,15 +270,17 @@ case when a.tax_base_amount>0 then a.tax_base_amount else 0 end as net,
 case when b.id is null and f.id is not null then f.name
 	when trim(a.ref)='' or a.ref is null then d.name else a.ref end as ref,
 coalesce(b.id,0) tax_line_id, a.journal_id, a.invoice_id, a.move_id, a.payment_id, d.name as jentry
-from account_move_line a inner join
-	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id) g
-	on a.account_id=g.account_id
-	left join account_tax b on a.tax_line_id = b.id
+from (select *, tax_line_id as tax from account_move_line a where account_id in 
+	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
+	union all
+	select a.*, c.id as tax from account_move_line a,account_move_line_account_tax_rel b, account_tax c
+	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
+	left join account_tax b on a.tax = b.id
 	left join account_payment f on a.payment_id = f.id
 	left join account_journal c on a.journal_id=c.id
 	left join account_move d on a.move_id=d.id
 where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date
-                """  % (options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), current_id)
+                """  % (options.get('reporttype'), options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), current_id)
 
                 self.env.cr.execute(select, [])
                 results1 = self.env.cr.dictfetchall()
@@ -326,14 +332,16 @@ where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date
         
         select = """select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name, 
 sum(case when a.tax_base_amount>0 then a.tax_base_amount else 0 end ) as net, sum(a.balance) tax 
-from account_move_line a inner join
-	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id) g
-	on a.account_id=g.account_id
-	left join account_tax b on a.tax_line_id = b.id
+from (select *, tax_line_id as tax from account_move_line a where account_id in 
+	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
+	union all
+	select a.*, c.id as tax from account_move_line a,account_move_line_account_tax_rel b, account_tax c
+	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
+	left join account_tax b on a.tax = b.id
 	left join account_payment f on a.payment_id = f.id
 where a.date>='%s' and a.date<='%s'
 group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name
-            """  % (options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'))
+            """  % (options.get('reporttype'), options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'))
 
         self.env.cr.execute(select, [])
         results = self.env.cr.dictfetchall()
