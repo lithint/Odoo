@@ -43,7 +43,7 @@ class GstReport(models.TransientModel):
     filter_reporttype = ''
     filter_export_excel = False
     
-    MAX_LINES = 80
+    MAX_LINES = 500
 
 
     def _get_templates(self):
@@ -218,26 +218,26 @@ class GstReport(models.TransientModel):
             else:
                 tax_cond = 'b.id = -1'
             select = """select * from (select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name, 
-sum(case when a.tax_base_amount>0 then a.tax_base_amount else 0 end ) as net, sum(a.balance) tax 
-from (select *, tax_line_id as tax from account_move_line a where account_id in 
+sum(a.net) as net, sum(a.tax) tax 
+from (select tax_line_id as taxid, 0 as net, balance as tax, * from account_move_line a where account_id in 
 	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
 	union all
-	select a.*, c.id as tax from account_move_line a,account_move_line_account_tax_rel b, account_tax c
+	select c.id as taxid, balance as net, 0 as tax, a.* from account_move_line a,account_move_line_account_tax_rel b, account_tax c
 	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
-	left join account_tax b on a.tax = b.id
+	left join account_tax b on a.taxid = b.id
 	left join account_payment f on a.payment_id = f.id
 where a.date>='%s' and a.date<='%s'
 group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name) b where %s
                 """  % (options.get('reporttype'), options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), tax_cond)
         else:
             select = """select * from (select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name, 
-sum(case when a.tax_base_amount>0 then a.tax_base_amount else 0 end ) as net, sum(a.balance) tax 
-from (select *, tax_line_id as tax from account_move_line a where account_id in 
+sum(a.net) as net, sum(a.tax) tax 
+from (select tax_line_id as taxid, 0 as net, balance as tax, * from account_move_line a where account_id in 
 	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
 	union all
-	select a.*, c.id as tax from account_move_line a,account_move_line_account_tax_rel b, account_tax c
-	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
-	left join account_tax b on a.tax = b.id
+	select c.id as taxid, balance as net, 0 as tax, a.* from account_move_line a,account_move_line_account_tax_rel b, account_tax c
+	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s')  a
+	left join account_tax b on a.taxid = b.id
 	left join account_payment f on a.payment_id = f.id
 where a.date>='%s' and a.date<='%s'
 group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name) b where b.id = %s
@@ -265,25 +265,26 @@ group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name) b wh
                 })
 
             if 'tax_%s' % (current_id) in options.get('unfolded_lines') or options.get('unfold_all'):
-                select = """select * from (select a.id, a.name, c.name as transtype, a.date, a.balance as tax,
-case when a.tax_base_amount>0 then a.tax_base_amount else 0 end as net,
+                select = """select * from (select a.id, a.name, c.name as transtype, a.date, a.tax,
+coalesce(a.net, 0) as net,
 case when b.id is null and f.id is not null then f.name
 	when trim(a.ref)='' or a.ref is null then d.name else a.ref end as ref,
 coalesce(b.id,0) tax_line_id, a.journal_id, a.invoice_id, a.move_id, a.payment_id, d.name as jentry
-from (select *, tax_line_id as tax from account_move_line a where account_id in 
+from (select tax_line_id as taxid, 0 as net, balance as tax, * from account_move_line a where account_id in 
 	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
 	union all
-	select a.*, c.id as tax from account_move_line a,account_move_line_account_tax_rel b, account_tax c
+	select c.id as taxid, balance as net, 0 as tax, a.* from account_move_line a,account_move_line_account_tax_rel b, account_tax c
 	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
-	left join account_tax b on a.tax = b.id
+	left join account_tax b on a.taxid = b.id
 	left join account_payment f on a.payment_id = f.id
 	left join account_journal c on a.journal_id=c.id
 	left join account_move d on a.move_id=d.id
-where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date
+where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date, b.jentry
                 """  % (options.get('reporttype'), options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), current_id)
 
                 self.env.cr.execute(select, [])
                 results1 = self.env.cr.dictfetchall()
+                row = 1
                 for values1 in results1:
                     # # First, we add the total of the previous account line, if there was one
                     # if lines and lines[-1]['id'].startswith('month'):
@@ -301,6 +302,9 @@ where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date
                         'parent_id': 'tax_%s' % (current_id) ,
                         'columns': [{'name': n} for n in [values1['jentry'], values1['transtype'], convert_date('%s' % (values1['date']), {'format': 'YYYY-MM-dd'}), values1['ref'], self.format_value(values1['net']), self.format_value(values1['tax'])]],
                     })
+                    row +=1
+                    if self.MAX_LINES != None and row > self.MAX_LINES:
+                        break
 
         if not line_id:
             total_columns = ['', '', '', '', self.format_value(total_net), self.format_value(total_tax)]
@@ -330,14 +334,13 @@ where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date
         self._apply_date_filter(options)
         searchview_dict = {'options': options, 'context': self.env.context}
         
-        select = """select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name, 
-sum(case when a.tax_base_amount>0 then a.tax_base_amount else 0 end ) as net, sum(a.balance) tax 
-from (select *, tax_line_id as tax from account_move_line a where account_id in 
+        select = """select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name
+from (select tax_line_id as taxid, tax_base_amount as net, balance as tax, * from account_move_line a where account_id in 
 	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
 	union all
-	select a.*, c.id as tax from account_move_line a,account_move_line_account_tax_rel b, account_tax c
+	select c.id as taxid, balance as net, 0 as tax, a.* from account_move_line a,account_move_line_account_tax_rel b, account_tax c
 	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
-	left join account_tax b on a.tax = b.id
+	left join account_tax b on a.taxid = b.id
 	left join account_payment f on a.payment_id = f.id
 where a.date>='%s' and a.date<='%s'
 group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name
