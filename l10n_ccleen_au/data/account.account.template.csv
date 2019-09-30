@@ -1,6 +1,5 @@
 id,chart_template_id:id,code,name,user_type_id:id,reconcile,group_id:id
 ccleen_au_1000,l10n_ccleen_au.l10n_ccleen_au_chart_template,1000,Westpac Account 331,account.data_account_type_liquidity,FALSE,account_grp_asset
-ccleen_au_1017,l10n_ccleen_au.l10n_ccleen_au_chart_template,1017,Liquidity Transfer,account.data_account_type_current_assets,FALSE,account_grp_asset
 ccleen_au_1030,l10n_ccleen_au.l10n_ccleen_au_chart_template,1030,Electriconic Clearing Account,account.data_account_type_liquidity,FALSE,account_grp_asset
 ccleen_au_1050,l10n_ccleen_au.l10n_ccleen_au_chart_template,1050,Petty Cash,account.data_account_type_liquidity,FALSE,account_grp_asset
 ccleen_au_1063,l10n_ccleen_au.l10n_ccleen_au_chart_template,1063,USD Western Union(Main),account.data_account_type_liquidity,FALSE,account_grp_asset
