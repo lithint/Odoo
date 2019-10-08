@@ -15,11 +15,13 @@
     'website': 'http://www.serpentcs.com',
 
     # Dependencies
-    'depends': ['stock'],
+    'depends': ['stock', 'sale_management'],
 
     # Views
     'data': [
-        'data/product_data.xml'
+        'data/ir_sequence_data.xml',
+        'data/product_data.xml',
+        'views/sale_order_view.xml'
     ],
 
     # Techical
