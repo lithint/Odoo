@@ -10,6 +10,11 @@ class AccountInvoice(models.Model):
     _inherit = "account.invoice"
 
     state = fields.Selection(selection_add=[('on_hold', 'On Hold')])
+    previous_state = fields.Selection([
+        ('draft', 'Draft'), ('on_hold', 'On Hold'),
+        ('open', 'Open'), ('paid', 'Paid'),
+        ('in_payment', 'In Payment'), ('cancel', 'Cancelled')],
+        string="Previous State", default="draft")
 
     @api.model
     def default_get(self, default_fields):
@@ -23,7 +28,15 @@ class AccountInvoice(models.Model):
     def action_invoice_on_hold(self):
         """Method to make bill on hold."""
         for bill in self:
-            bill.state = 'on_hold'
+            previous_state = bill.state
+            bill.write({'state': 'on_hold', 'previous_state': previous_state})
+
+    @api.multi
+    def action_invoice_un_hold(self):
+        """Method to make bill un hold."""
+        for bill in self:
+            re_state = bill.previous_state
+            bill.write({'state': re_state, 'previous_state': re_state})
 
     def _search_id(self, query):
         if not query:

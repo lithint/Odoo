@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-	<record id="inherite_invoice_supplier_tree" model="ir.ui.view">
+    <!-- Inherited Bills Search View -->
+    <record id="view_account_invoice_filter_scs_inherit"
+            model="ir.ui.view">
+        <field name="name">account.invoice.select.scs.inherit</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id"
+            ref="account.view_account_invoice_filter"/>
+        <field name="arch" type="xml">
+            <filter name="draft" position="after">
+                <filter name="on_hold_filter" string="On Hold"
+                    domain="[('state','=','on_hold')]"/>
+            </filter>
+        </field>
+    </record>
+
+	<record id="inherite_invoice_supplier_tree"
+            model="ir.ui.view">
 	    <field name="name">hv_batch_invoice_inherite_invoice_supplier_tree</field>
 	    <field name="model">account.invoice</field>
 	    <field name="inherit_id" ref="account.invoice_supplier_tree"/>
@@ -19,26 +35,34 @@
         <field name="model">account.invoice</field>
         <field name="inherit_id" ref="account.invoice_supplier_form"/>
         <field name="arch" type="xml">
-        	<xpath expr="//button[@name='action_invoice_open']" position="attributes">
+<!--         	<xpath expr="//button[@name='action_invoice_open']" position="attributes">
         		<attribute name="states">draft,on_hold</attribute>
     		</xpath>
         	<xpath expr="//button[@name='action_invoice_draft']" position="attributes">
         		<attribute name="states">cancel,on_hold</attribute>
-    		</xpath>
+    		</xpath> -->
         	<xpath expr="//button[@name='action_invoice_draft']" position="after">
         		<button name="action_invoice_on_hold"
-        			states="draft,open,cancel"
+        			states="draft,open"
         			string="On Hold" type="object"
         			groups="account.group_account_invoice"/>
+                <button name="action_invoice_un_hold"
+                    states="on_hold" string="Un Hold"
+                    type="object"
+                    groups="account.group_account_invoice"/>
     		</xpath>
+            <field name="date_invoice" position="after">
+                <field name="previous_state" invisible="1"/>
+            </field>
         	<xpath expr="//field[@name='state']" position="attributes">
         		<attribute name="statusbar_visible">draft,open,on_hold,paid</attribute>
     		</xpath>
+
     	</field>
 	</record>
 
 	<!-- Inherited Bill Form View from account_cancel module -->
-    <record id="invoice_supplier_cancel_form_inherit_gentec"
+<!--     <record id="invoice_supplier_cancel_form_inherit_gentec"
     		model="ir.ui.view">
         <field name="name">invoice.supplier.cancel.form.inherit</field>
         <field name="model">account.invoice</field>
@@ -50,5 +74,5 @@
         		<attribute name="states">draft,open,in_payment,paid,on_hold</attribute>
     		</xpath>
         </field>
-    </record>
+    </record> -->
 </odoo>
