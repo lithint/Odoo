@@ -43,7 +43,7 @@ class GstReport(models.TransientModel):
     filter_reporttype = ''
     filter_export_excel = False
     
-    MAX_LINES = 500
+    MAX_LINES = 200
 
 
     def _get_templates(self):
@@ -205,10 +205,11 @@ class GstReport(models.TransientModel):
         output.close()
         options['unfold_all'] = saveunfold
         options['export_excel'] = False
-        self.MAX_LINES = 80
+        self.MAX_LINES = 200
 
     @api.model
     def _get_lines(self, options, line_id=None):
+        offset = int(options.get('lines_offset', 0))
         convert_date = self.env['ir.qweb.field.date'].value_to_html
         lines = []
         if not line_id:
@@ -223,7 +224,11 @@ from (select tax_line_id as taxid, 0 as net, balance as tax, * from account_move
 	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
 	union all
 	select c.id as taxid, balance as net, 0 as tax, a.* from account_move_line a,account_move_line_account_tax_rel b, account_tax c
-	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
+	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s'
+    union all
+	select 0 as taxid, balance  as net, 0 as tax, a.* from account_move_line a
+	where a.account_id in (select id from account_account as aa where aa.code='4060')
+    	and a.id not in (select account_move_line_id from account_move_line_account_tax_rel)) a
 	left join account_tax b on a.taxid = b.id
 	left join account_payment f on a.payment_id = f.id
 where a.date>='%s' and a.date<='%s'
@@ -236,7 +241,11 @@ from (select tax_line_id as taxid, 0 as net, balance as tax, * from account_move
 	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
 	union all
 	select c.id as taxid, balance as net, 0 as tax, a.* from account_move_line a,account_move_line_account_tax_rel b, account_tax c
-	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s')  a
+	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s'
+    union all
+	select 0 as taxid, balance  as net, 0 as tax, a.* from account_move_line a
+	where a.account_id in (select id from account_account as aa where aa.code='4060')
+    	and a.id not in (select account_move_line_id from account_move_line_account_tax_rel))  a
 	left join account_tax b on a.taxid = b.id
 	left join account_payment f on a.payment_id = f.id
 where a.date>='%s' and a.date<='%s'
@@ -255,7 +264,8 @@ group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name) b wh
             total_net += values['net']
             total_tax += values['tax']
             current_id = values['id']
-            lines.append({
+            if offset == 0:
+                lines.append({
                     'id': 'tax_%s' % (current_id),
                     'name': '%s' % (values['name']),
                     'level': 2,
@@ -274,18 +284,30 @@ from (select tax_line_id as taxid, 0 as net, balance as tax, * from account_move
 	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
 	union all
 	select c.id as taxid, balance as net, 0 as tax, a.* from account_move_line a,account_move_line_account_tax_rel b, account_tax c
-	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
+	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s'
+    union all
+	select 0 as taxid, balance  as net, 0 as tax, a.* from account_move_line a
+	where a.account_id in (select id from account_account as aa where aa.code='4060')
+    	and a.id not in (select account_move_line_id from account_move_line_account_tax_rel)) a
 	left join account_tax b on a.taxid = b.id
 	left join account_payment f on a.payment_id = f.id
 	left join account_journal c on a.journal_id=c.id
 	left join account_move d on a.move_id=d.id
-where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date, b.jentry
+where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date, b.jentry, abs(b.net) desc
                 """  % (options.get('reporttype'), options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'), current_id)
 
                 self.env.cr.execute(select, [])
                 results1 = self.env.cr.dictfetchall()
-                row = 1
+
+                domain_lines = []
+                remaining_lines = 0 
+                if not self.env.context.get('print_mode') or options.get('export_excel')==False:
+                    remaining_lines = len(results1) - offset  - self.MAX_LINES
+                row = 0
                 for values1 in results1:
+                    row += 1
+                    if row < offset:
+                        continue
                     # # First, we add the total of the previous account line, if there was one
                     # if lines and lines[-1]['id'].startswith('month'):
                     #     lines.append(self._get_total(current_journal, current_account, results))
@@ -294,17 +316,30 @@ where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date,
                         caret_type = 'account.invoice.out' if options.get('reporttype') == 'sale' else 'account.invoice.in'
                     elif values1['payment_id']:
                         caret_type = 'account.payment'
-                    lines.append({
+                    domain_lines.append({
                         'id': values1['id'],
-                        'name': values1['name'],
+                        'name': values1['jentry'] if options.get('export_excel')==False else '',
                         'level': 4,
                         'caret_options': caret_type if options.get('export_excel')==False else '',
                         'parent_id': 'tax_%s' % (current_id) ,
                         'columns': [{'name': n} for n in [values1['jentry'], values1['transtype'], convert_date('%s' % (values1['date']), {'format': 'YYYY-MM-dd'}), values1['ref'], self.format_value(values1['net']), self.format_value(values1['tax'])]],
                     })
-                    row +=1
-                    if self.MAX_LINES != None and row > self.MAX_LINES:
+                    if self.MAX_LINES != None and row > offset + self.MAX_LINES:
                         break
+
+                # load more
+                if remaining_lines > 0:
+                    domain_lines.append({
+                        'id': 'loadmore_%s' % current_id,
+                        'offset': offset + self.MAX_LINES,
+                        'progress': (offset + self.MAX_LINES) / len(results1) * 100,
+                        'class': 'o_account_reports_load_more text-center',
+                        'parent_id': 'tax_%s' % current_id,
+                        'name': _('Load more... (%s remaining)') % remaining_lines,
+                        # 'colspan': 10 if self.user_has_groups('base.group_multi_currency') else 9,
+                        'columns': [{}],
+                    })
+                lines += domain_lines
 
         if not line_id:
             total_columns = ['', '', '', '', self.format_value(total_net), self.format_value(total_tax)]
@@ -339,7 +374,10 @@ from (select tax_line_id as taxid, tax_base_amount as net, balance as tax, * fro
 	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
 	union all
 	select c.id as taxid, balance as net, 0 as tax, a.* from account_move_line a,account_move_line_account_tax_rel b, account_tax c
-	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s') a
+	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s'
+    union all
+	select 0 as taxid, balance  as net, 0 as tax, a.* from account_move_line a
+	where a.account_id in (select id from account_account as aa where aa.code='4060')) a
 	left join account_tax b on a.taxid = b.id
 	left join account_payment f on a.payment_id = f.id
 where a.date>='%s' and a.date<='%s'

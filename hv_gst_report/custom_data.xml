@@ -87,11 +87,11 @@
             <field name="context" eval="{'model': 'hv.gst.report','reporttype': 'purchase'}" />
         </record>
        
-
-        <menuitem id="account_reports_gst_reports_menu" name="GST Reports" parent="account.menu_finance_reports" sequence="1"/>
-        
         <menuitem id="menu_action_gst_report_on_sales" name="GST on Sales" action="action_gst_on_sales_report" parent="hv_gst_report.account_reports_gst_reports_menu"/>
 
         <menuitem id="menu_action_gst_report_on_purchases" name="GST on Purchases" action="action_gst_on_purchase_report" parent="hv_gst_report.account_reports_gst_reports_menu"/>
+
+        <menuitem id="account_reports_gst_reports_menu" name="GST Reports" parent="account.menu_finance_reports" sequence="1"/>
+
     </data>
 </odoo>
