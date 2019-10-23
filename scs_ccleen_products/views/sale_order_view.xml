@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inherited Quotation Tree view to add Quotation number -->
+    <record id="view_quotation_tree_scs_inherit"
+            model="ir.ui.view">
+        <field name="name">sale.order.tree</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="client_order_ref"/>
+            </field>
+            <field name="name" position="before">
+                <field name="quote_number" attrs="{'invisible': [('client_order_ref', '!=', False)]}"/>
+            </field>
+            <field name="name" position="attributes">
+                <attribute name="string">Sale Order Number</attribute>
+                <attribute name="attrs">{'invisible': [('client_order_ref', '=', False)]}</attribute>
+            </field>
+        </field>
+    </record>
+
+    <!-- Inherited sale order form view from sale module -->
+   <record id="view_order_form_scs_inherit" model="ir.ui.view">
+        <field name="name">sale.order.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <field name="partner_shipping_id" position="after">
+                <field name="client_order_ref"/>
+            </field>
+            <field name="name" position="attributes">
+                <attribute name="string">Sale Order Number</attribute>
+                <attribute name="attrs">{'invisible': [('client_order_ref', '=', False)]}</attribute>
+            </field>
+            <field name="name" position="after">
+                <field name="quote_number" readonly="1"
+                attrs="{'invisible': [('client_order_ref', '!=', False)]}"/>
+            </field>
+        </field>
+    </record>
+</odoo>

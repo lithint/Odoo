@@ -1,1 +1,3 @@
-from . import custom_model
+"""Initialize models files."""
+
+from . import models

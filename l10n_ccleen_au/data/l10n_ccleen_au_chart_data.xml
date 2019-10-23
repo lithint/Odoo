@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="l10n_ccleen_au_chart_template" model="account.chart.template">
+        <field name="name">Ccleen Australian Tax and Account Chart Template (by SerpentCS)</field>
+        <field name="bank_account_code_prefix">1011</field> <!-- 1011 -->
+        <field name="cash_account_code_prefix">1051</field> <!-- 1051 -->
+        <field name="transfer_account_code_prefix">1017</field> <!-- 1017 -->
+        <field name="code_digits">4</field>
+        <field name="currency_id" ref="base.AUD"/>
+    </record>
+</odoo>

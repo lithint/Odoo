@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Sequences for Quotation (Gentec) -->
+        <record id="seq_gentec_quotation_order"
+                model="ir.sequence">
+            <field name="name">Gentec Quotation Order</field>
+            <field name="code">quotation.order.sequence</field>
+            <field name="prefix">QO</field>
+            <field name="padding">6</field>
+            <field name="suffix"></field>
+          <!--   <field name="use_date_range" eval="True"/> -->
+            <field name="company_id" ref="base.main_company"/>
+        </record>
+
+        <!-- Sequences for Quotation (Ccleen) -->
+        <record id="seq_ccleen_quotation_order"
+                model="ir.sequence">
+            <field name="name">Ccleen Quotation Order</field>
+            <field name="code">quotation.order.sequence</field>
+            <field name="prefix">QO</field>
+            <field name="padding">6</field>
+            <field name="suffix"></field>
+          <!--   <field name="use_date_range" eval="True"/> -->
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Sequences for Sale order (Ccleen) -->
+        <record id="seq_ccleen_sale_order"
+                model="ir.sequence">
+            <field name="name">Ccleen Sale Order</field>
+            <field name="code">sale.order</field>
+            <field name="prefix">SO</field>
+            <field name="padding">6</field>
+            <field name="suffix"></field>
+          <!--   <field name="use_date_range" eval="True"/> -->
+            <field name="company_id" eval="False"/>
+        </record>
+
+    </data>
+</odoo>

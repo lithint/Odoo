@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="prod_categ_alkaline_solution"
+            model="product.category">
+            <field name="parent_id"
+                ref="product.product_category_all"/>
+            <field name="name">Alkaline Solution</field>
+        </record>
+
+        <record id="ccleen_product_001" model="product.product">
+            <field name="name">CCLEEN - [pH 12.5] Super Alkaline Solution 500ml</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">125CCL05</field>
+        </record>
+
+        <record id="ccleen_product_002" model="product.product">
+            <field name="name">CCLEEN - [pH 12.5] Super Alkaline Solution 1 Lt</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">125CCL1</field>
+        </record>
+
+        <record id="ccleen_product_003" model="product.product">
+            <field name="name">CCLEEN - [pH 12.5] Super Alkaline Solution 5 Lts</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">125CCL5</field>
+        </record>
+
+        <record id="ccleen_product_004" model="product.product">
+            <field name="name">CCLEEN - [pH 12.5] Super Alkaline Solution 20 Lts</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">125CCL20</field>
+        </record>
+
+        <record id="ccleen_product_005" model="product.product">
+            <field name="name">CCLEEN - [pH 12.5] Super Alkaline Solution 500 Lts</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">125CCL500</field>
+        </record>
+
+        <record id="ccleen_product_006" model="product.product">
+            <field name="name">CCLEEN - [pH 12.5] Super Alkaline Solution 1000 Lts</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">125CCL1000</field>
+        </record>
+
+        <record id="ccleen_product_007" model="product.product">
+            <field name="name">CCLEEN - [pH 13.5] Super Alkaline Solution 500ml</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">135CCL05</field>
+        </record>
+
+        <record id="ccleen_product_008" model="product.product">
+            <field name="name">CCLEEN - [pH 13.5] Super Alkaline Solution 1 Lt</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">135CCL1</field>
+        </record>
+
+        <record id="ccleen_product_009" model="product.product">
+            <field name="name">CCLEEN - [pH 13.5] Super Alkaline Solution 5 Lts</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">135CCL5</field>
+        </record>
+
+        <record id="ccleen_product_010" model="product.product">
+            <field name="name">CCLEEN - [pH 13.5] Super Alkaline Solution 20 Lts</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">135CCL20</field>
+        </record>
+
+        <record id="ccleen_product_011" model="product.product">
+            <field name="name">CCLEEN - [pH 13.5] Super Alkaline Solution 500 Lts</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">135CCL500</field>
+        </record>
+
+        <record id="ccleen_product_012" model="product.product">
+            <field name="name">CCLEEN - [pH 13.5] Super Alkaline Solution 1000 Lts</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">135CCL1000</field>
+        </record>
+
+        <record id="ccleen_product_013" model="product.product">
+            <field name="name">CCLEEN - Alkaline / Acidic Machine 30lts -  [13.5 pH - Acidic 2.0]  or 100lts [12.5 pH - Acidic 3.0]</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">CCLEEN01</field>
+        </record>
+
+        <record id="ccleen_product_014" model="product.product">
+            <field name="name">CCLEEN - Alkaline / Acidic Machine 70lts -  [13.5 pH - Acidic 2.0]  or 200lts [12.5 pH - Acidic 3.0]</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">CCLEEN02</field>
+        </record>
+
+        <record id="ccleen_product_015" model="product.product">
+            <field name="name">CCLEEN - Alkaline / Acidic Machine 140lts -  [13.5 pH - Acidic 2.0]  or 500lts [12.5 pH - Acidic 3.0]</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">CCLEEN03</field>
+        </record>
+
+        <record id="ccleen_product_016" model="product.product">
+            <field name="name">CCLEEN - Alkaline / Acidic Machine 30lts per hour up to 13.5 pH</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">CCLEEN04</field>
+        </record>
+
+        <record id="ccleen_product_017" model="product.product">
+            <field name="name">CCLEEN - Alkaline / Acidic Machine 100lts per hour up to 13.5 pH</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">CCLEEN05</field>
+        </record>
+
+        <record id="ccleen_product_018" model="product.product">
+            <field name="name">CCLEEN - Alkaline / Acidic Machine 300lts per hour up to 13.5 pH</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">CCLEEN06</field>
+        </record>
+
+        <record id="ccleen_product_019" model="product.product">
+            <field name="name">CCLEEN - S5 Point of Use Alkaline and Acidic</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">CCLEEN07</field>
+        </record>
+
+        <record id="ccleen_product_020" model="product.product">
+            <field name="name">CCLEEN - TRIOX -  Point of Use Alkaline or Acidic (Blender)</field>
+            <field name="categ_id" ref="prod_categ_alkaline_solution"/>
+            <field name="standard_price">0.0</field>
+            <field name="list_price">0.0</field>
+            <field name="type">product</field>
+            <field name="uom_id" ref="uom.product_uom_litre"/>
+            <field name="uom_po_id" ref="uom.product_uom_litre"/>
+            <field name="default_code">CCLEEN08</field>
+        </record>
+    </data>
+</odoo>
