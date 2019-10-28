@@ -48,9 +48,9 @@ class GstReport(models.TransientModel):
 
     def _get_templates(self):
         templates = super(GstReport, self)._get_templates()
-        # templates['main_template'] = 'local_hv_gst_report.hv_main_template_gst_report'
-        templates['line_template'] = 'local_hv_gst_report.hv_line_template_gst_report'
-        templates['search_template'] = 'local_hv_gst_report.hv_search_template_gst_report'
+        # templates['main_template'] = 'hv_gst_report.hv_main_template_gst_report'
+        templates['line_template'] = 'hv_gst_report.hv_line_template_gst_report'
+        templates['search_template'] = 'hv_gst_report.hv_search_template_gst_report'
         return templates
 
     def _get_columns_name(self, options):
