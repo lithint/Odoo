@@ -72,7 +72,6 @@ class GstReport(models.TransientModel):
         saveunfold = options['unfold_all']
         options['unfold_all'] = True
         options['export_excel'] = True
-        self.MAX_LINES = None
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         sheet = workbook.add_worksheet(options.get('reportname')[:31])
@@ -205,7 +204,6 @@ class GstReport(models.TransientModel):
         output.close()
         options['unfold_all'] = saveunfold
         options['export_excel'] = False
-        self.MAX_LINES = 200
 
     @api.model
     def _get_lines(self, options, line_id=None):
@@ -324,7 +322,7 @@ where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date,
                         'parent_id': 'tax_%s' % (current_id) ,
                         'columns': [{'name': n} for n in [values1['jentry'], values1['transtype'], convert_date('%s' % (values1['date']), {'format': 'YYYY-MM-dd'}), values1['ref'], self.format_value(values1['net']), self.format_value(values1['tax'])]],
                     })
-                    if self.MAX_LINES != None and row > offset + self.MAX_LINES:
+                    if options.get('export_excel')==False and self.MAX_LINES != None and row > offset + self.MAX_LINES:
                         break
 
                 # load more
