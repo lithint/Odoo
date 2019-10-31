@@ -29,11 +29,15 @@
     'description': "",
     'author': "Havi Technology",
     'website': "havi.com.au",
-    'depends': ['base','account','account_batch_payment','hv_message'],
+    'depends': [
+        'account',
+        'account_batch_payment',
+        'hv_message'
+    ],
     'data': [
         'ir.model.access.csv',
         'custom_data.xml',
-        ],
+    ],
     'demo_xml': [],
     'installable': True,
 }
