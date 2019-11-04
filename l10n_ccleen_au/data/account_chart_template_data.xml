@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="l10n_ccleen_au_chart_template" model="account.chart.template">
+        <field name="use_anglo_saxon" eval="True"/>
         <field name="property_account_receivable_id" ref="ccleen_au_1100"/>
         <field name="property_account_payable_id" ref="ccleen_au_2000"/>
         <field name="property_account_expense_categ_id" ref="ccleen_au_5010"/>
