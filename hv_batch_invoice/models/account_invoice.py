@@ -24,16 +24,16 @@ class AccountInvoice(models.Model):
     #         res['partner_bank_id'] = False
     #     return res
 
-    @api.model
-    def create(self, vals):
-        """Overridden Create method to remove the default bank account."""
+    # @api.model
+    # def create(self, vals):
+       # """Overridden Create method to remove the default bank account."""
         # bank_account = self._get_default_bank_id(vals.get('type'),
         #                                         vals.get('company_id'))
         # if bank_account and not vals.get('partner_bank_id'):
         #     vals['partner_bank_id'] = bank_account.id
-        inv = super(AccountInvoice, self).create(vals)
-        inv.partner_bank_id = False
-        return inv
+        # inv = super(AccountInvoice, self).create(vals)
+        # inv.partner_bank_id = False
+        # return inv
 
     @api.multi
     def action_invoice_on_hold(self):
