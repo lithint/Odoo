@@ -16,13 +16,13 @@ class AccountInvoice(models.Model):
         ('in_payment', 'In Payment'), ('cancel', 'Cancelled')],
         string="Previous State", default="draft")
 
-    @api.model
-    def default_get(self, default_fields):
-        """Overridden Default Get to remove the Bank account."""
-        res = super(AccountInvoice, self).default_get(default_fields)
-        if res.get('partner_bank_id', False):
-            res['partner_bank_id'] = False
-        return res
+    # @api.model
+    # def default_get(self, default_fields):
+    #     """Overridden Default Get to remove the Bank account."""
+    #     res = super(AccountInvoice, self).default_get(default_fields)
+    #     if res.get('partner_bank_id', False):
+    #         res['partner_bank_id'] = False
+    #     return res
 
     @api.model
     def create(self, vals):
