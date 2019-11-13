@@ -187,6 +187,8 @@
                         <group>
                             <field name="rebatepercent"/>
                             <field name="state"/>
+                            <field name="company_id" required="1"
+                                attrs="{'readonly': [('state','!=', 'draft')]}"/>
                         </group>
                     </group>
                     <notebook colspan="4">

@@ -36,8 +36,9 @@
     ],
     'data': [
         'security/ir.model.access.csv',
+        'security/batch_invoice_security.xml',
         'views/account_invoice_view.xml',
-        'views/custom_data.xml',
+        'views/custom_data.xml'
     ],
     'installable': True,
 }

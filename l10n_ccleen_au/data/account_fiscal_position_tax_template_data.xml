@@ -35,4 +35,32 @@
             <field name="tax_src_id" ref="ccleen_au_tax_purchase_capital"/>
             <field name="tax_dest_id" ref="ccleen_au_tax_purchase_0"/>
         </record>
+
+        <record id="ccleen_fiscal_position_import" model="account.fiscal.position.template">
+            <field name="name">Import</field>
+            <field name="chart_template_id" ref="l10n_ccleen_au_chart_template"/>
+        </record>
+
+        <record id="ccleen_fiscal_position_tax_templ_import_purch2"
+            model="account.fiscal.position.tax.template">
+            <field name="position_id"
+                    ref="ccleen_fiscal_position_import"/>
+            <field name="tax_src_id"
+                ref="ccleen_au_tax_purchase_10"/>
+            <field name="tax_dest_id" ref="ccleen_au_tax_purchase_0"/>
+        </record>
+
+        <record id="ccleen_fiscal_position_export" model="account.fiscal.position.template">
+            <field name="name">Export</field>
+            <field name="chart_template_id" ref="l10n_ccleen_au_chart_template"/>
+        </record>
+
+        <record id="ccleen_fiscal_position_tax_templ_export"
+            model="account.fiscal.position.tax.template">
+            <field name="position_id"
+                    ref="ccleen_fiscal_position_export"/>
+            <field name="tax_src_id"
+                ref="ccleen_au_tax_sale_10"/>
+            <field name="tax_dest_id" ref="ccleen_au_tax_sale_0"/>
+        </record>
 </odoo>

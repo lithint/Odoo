@@ -31,10 +31,12 @@
     'website': "havi.com.au",
     'depends': [
         'account',
-        'hv_message'],
+        'hv_message'
+    ],
     'data': [
-        'ir.model.access.csv',
-        'custom_data.xml',
+        'security/ir.model.access.csv',
+        'security/cust_statement_security.xml',
+        'views/custom_data.xml',
     ],
     'demo_xml': [],
     'installable': True,

@@ -255,7 +255,6 @@ class AccountRegisterPayment(models.TransientModel):
 
     @api.multi
     def create_payments(self):
-        print("self._context:::::::", self._context)
         if self._context.get('batch_invoice_id') and \
                 self.currency_id.round(self.payment_difference_rest) != 0 and \
                 self.payment_difference_handling == 'reconcile':
@@ -266,7 +265,6 @@ class AccountRegisterPayment(models.TransientModel):
             batch_invoice = self.env['batch.invoice'].browse(
                 self._context.get('batch_invoice_id'))
             batch_invoice.write({'state': 'run'})
-
         return action_vals
 
 
@@ -367,7 +365,6 @@ class AccountPayment(models.Model):
             move.post()
 
         # reconcile the invoice receivable/payable line(s) with the payment
-        print("\n :::::::::@@@@::::::::", self.invoice_ids)
         if self.invoice_ids:
             self.invoice_ids.register_payment(counterpart_aml)
 
@@ -409,6 +406,10 @@ class hv_batch_invoice(models.Model):
     import_ids = fields.One2many('batch.invoice.import.result', 'batch_id')
     payment_ids = fields.One2many('account.abstract.payment',
                                   'batch_invoice_id')
+    company_id = fields.Many2one('res.company',
+                                 string='Company', change_default=True,
+                                 default=lambda self: self.env['res.company'].
+                                 _company_default_get('batch.invoice'))
 
     @api.multi
     @api.depends('invoice_ids', 'customer_id')
@@ -477,7 +478,6 @@ class hv_batch_invoice(models.Model):
         inv_obj = self.env['account.invoice']
         if not self.invoice_ids:
             raise UserError(_('You cannot register without any invoice.'))
-        print("\n :::::::::", self.invoice_ids, len(self.invoice_ids))
         out_refund_invs = inv_obj.search([('id', 'in', self.invoice_ids.ids),
                                           ('type', '=', 'out_refund'),
                                           ('state', '=', 'open')])

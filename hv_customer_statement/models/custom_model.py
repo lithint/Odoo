@@ -103,12 +103,17 @@ class hv_customer_statement_line(models.Model):
     statement_id = fields.Many2one('hv.customer.statement')
     email_send = fields.Integer(string='Send Times', default=0, readonly=True)
     send_check = fields.Boolean(string='Send', default=False)
-    parent_id = fields.Many2one(
-        'hv.customer.statement.line', index=True, ondelete='cascade')
+    parent_id = fields.Many2one('hv.customer.statement.line', index=True,
+                                ondelete='cascade')
     child_ids = fields.One2many('hv.customer.statement.line',
                                 'parent_id', index=True, ondelete='cascade')
     consolidatedsm = fields.Boolean(
         default=lambda self: self.get_consolidatedsm())
+    company_id = fields.Many2one('res.company',
+                                 string='Company', change_default=True,
+                                 default=lambda self: self.env['res.company'].
+                                 _company_default_get(
+                                     'hv.customer.statement.line'))
 
     _sql_constraints = [
         ('unique_customer_id', 'unique (customer_id,statement_id,parent_id)',
@@ -167,6 +172,7 @@ class hv_customer_statement_line(models.Model):
                     where m.reconciled=false and m.blocked=false
                         and m.date  >= '%s' and m.date <= '%s'
                         and (i.partner_id = %s) 
+                        and (m.company_id = %s)
                         and m.invoice_id is not null 
                         group by m.invoice_id
                     union all
@@ -177,8 +183,12 @@ class hv_customer_statement_line(models.Model):
                     where m.reconciled=false and m.blocked=false
                         and m.date  >= '%s' and m.date <= '%s'
                         and (m.partner_id = %s) 
+                        and (m.company_id = %s) 
                         and m.invoice_id is null 
-                    """ % (start_date, statement_date , self.customer_id.id, start_date, statement_date, self.customer_id.id)
+                    """ % (start_date, statement_date , self.customer_id.id,
+                           self.company_id and self.company_id.id or False,
+                           start_date, statement_date, self.customer_id.id,
+                           self.company_id and self.company_id.id or False)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
 
@@ -205,6 +215,7 @@ class hv_customer_statement_line(models.Model):
                     where m.reconciled=false and m.blocked=false
                         and m.date >= '%s' and m.date  <= '%s'
                         and (m.partner_id = %s)
+                        and (m.company_id = %s)
                         and m.invoice_id is not null 
                         group by m.invoice_id
                     union all
@@ -215,8 +226,12 @@ class hv_customer_statement_line(models.Model):
                     where m.reconciled=false and m.blocked=false
                     and m.date  >= '%s' and m.date  <= '%s'
                         and (m.partner_id = %s)
+                        and (m.company_id = %s)
                         and m.invoice_id is null 
-                    """ % (start_date, statement_date , self.customer_id.id, start_date, statement_date, self.customer_id.id)
+                    """ % (start_date, statement_date, self.customer_id.id,
+                           self.company_id and self.company_id.id or False,
+                           start_date, statement_date, self.customer_id.id,
+                           self.company_id and self.company_id.id or False)
             invoice_ids = self.env['account.invoice']._search_id(query)
             self.invoice_ids = [(6, 0, [r[0] for r in invoice_ids])]
 
@@ -249,6 +264,11 @@ class hv_customer_statement(models.Model):
         'statement_id', string='Customers',
         domain=lambda self: [('consolidatedsm', '=', self.consolidatedsm)])
     selectall = fields.Boolean(default=False, compute="check_select")
+
+    company_id = fields.Many2one('res.company',
+                                 string='Company', change_default=True,
+                                 default=lambda self: self.env['res.company'].
+                                 _company_default_get('hv.customer.statement'))
 
     @api.depends("consolidatedsm")
     def check_select(self):
@@ -317,11 +337,14 @@ class hv_customer_statement(models.Model):
                             inner join account_account a on m.account_id = a.id 
                                 and a.deprecated=false and a.internal_type ='receivable'
                         where m.reconciled=false and m.blocked=false
-                            and m.date >= '%s' and m.date <= '%s')
-                    """ % (start_date, statement_date)
+                            and m.date >= '%s' and m.date <= '%s' and
+                            m.company_id = '%s')
+                    """ % (start_date, statement_date,
+                           self.company_id and self.company_id.id or False)
             partner_ids = self.env['account.invoice']._search_id(query)
             lself = self.env['hv.customer.statement.line'].search(
-                [('statement_id', '=', self.id), ('consolidatedsm', '=', True)])
+                [('statement_id', '=', self.id),
+                 ('consolidatedsm', '=', True)])
             for l in lself:
                 if not l.consolidatedsm:
                     continue

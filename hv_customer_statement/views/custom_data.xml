@@ -271,6 +271,7 @@
                                 <field name="showonlyopen"/>
                                 <field name="consolidatedsm"/>
                                 <field name="selectall" invisible="1"/>
+                                <field name="company_id" required="1"/>
                             </group>
                         </group>
                         <!-- <notebook attrs="{'invisible': [('consolidatedsm','=',False)]}"> -->
