@@ -12,7 +12,6 @@
                 <t t-call="account_reports.filter_info_template"/>
             </xpath>
         </template> -->
-       
         <template id="hv_search_template_extra_options" inherit_id="account_reports.search_template_extra_options" primary="True">
             <div class="dropdown-menu o_filters_menu" role="menu">
                 <a role="menuitem" class="dropdown-item js_account_report_bool_filter" t-if="options.get('m0') != None" title="Filter" data-filter="tm0" multiple="multiple"><t t-esc="gst_all[0][1]" /></a>
