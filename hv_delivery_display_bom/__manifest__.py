@@ -29,10 +29,9 @@
     'description': "",
     'author': "Havi Technology",
     'website': "havi.com.au",
-    'depends': ['base','stock'],
+    'depends': ['stock_account'],
     'data': [
-        'custom_data.xml',
-        ],
-    'demo_xml': [],
+        'views/custom_data.xml',
+    ],
     'installable': True,
 }

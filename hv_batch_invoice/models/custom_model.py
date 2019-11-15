@@ -260,7 +260,6 @@ class AccountRegisterPayment(models.TransientModel):
                 self.payment_difference_handling == 'reconcile':
             raise UserError(_('Payment rest value must be 0.'))
         action_vals = super(AccountRegisterPayment, self).create_payments()
-
         if self._context.get('batch_invoice_id'):
             batch_invoice = self.env['batch.invoice'].browse(
                 self._context.get('batch_invoice_id'))

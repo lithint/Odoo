@@ -30,7 +30,7 @@
     'author': "Havi Technology",
     'website': "havi.com.au",
     'depends': [
-        'sale',
+        'sale_margin',
         'hv_message'
     ],
     'data': [

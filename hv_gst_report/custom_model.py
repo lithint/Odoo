@@ -13,7 +13,6 @@ except ImportError:
     import xlsxwriter
 
 
-
 class GstReport(models.TransientModel):
     _inherit = "account.report"
     _name = 'hv.gst.report'
@@ -42,9 +41,8 @@ class GstReport(models.TransientModel):
     filter_tm19 = True
     filter_reporttype = ''
     filter_export_excel = False
-    
-    MAX_LINES = 200
 
+    MAX_LINES = 200
 
     def _get_templates(self):
         templates = super(GstReport, self)._get_templates()
@@ -58,10 +56,10 @@ class GstReport(models.TransientModel):
             {'name': _('Tax Code')},
             {'name': _('Journal Entry')},
             {'name': _('Transaction Type')},
-            {'name': _('Transaction Date') , 'class': 'date'},
+            {'name': _('Transaction Date'), 'class': 'date'},
             {'name': _('Document Number')},
             {'name': _('Net Amount'), 'class': 'number'},
-            {'name': _('Tax Amount'), 'class': 'number'},{}]
+            {'name': _('Tax Amount'), 'class': 'number'}, {}]
 
         return columns
 
@@ -77,70 +75,94 @@ class GstReport(models.TransientModel):
         sheet = workbook.add_worksheet(options.get('reportname')[:31])
 
         def_style = workbook.add_format({'font_name': 'Arial'})
-        title_style = workbook.add_format({'font_name': 'Arial', 'bold': True, 'bottom': 2})
-        super_col_style = workbook.add_format({'font_name': 'Arial', 'bold': True, 'align': 'center'})
-        level_0_style = workbook.add_format({'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'pattern': 1, 'font_color': '#FFFFFF'})
-        level_0_style_left = workbook.add_format({'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'left': 2, 'pattern': 1, 'font_color': '#FFFFFF'})
-        level_0_style_right = workbook.add_format({'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'right': 2, 'pattern': 1, 'font_color': '#FFFFFF'})
-        level_1_style = workbook.add_format({'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2})
-        level_1_style_left = workbook.add_format({'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'left': 2})
-        level_1_style_right = workbook.add_format({'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'right': 2})
-        level_2_style = workbook.add_format({'font_name': 'Arial', 'bold': True, 'top': 2})
-        level_2_style_left = workbook.add_format({'font_name': 'Arial', 'bold': True, 'top': 2, 'left': 2})
-        level_2_style_right = workbook.add_format({'font_name': 'Arial', 'bold': True, 'top': 2, 'right': 2})
+        title_style = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'bottom': 2})
+        super_col_style = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'align': 'center'})
+        level_0_style = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'pattern': 1, 'font_color': '#FFFFFF'})
+        level_0_style_left = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'left': 2, 'pattern': 1, 'font_color': '#FFFFFF'})
+        level_0_style_right = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'right': 2, 'pattern': 1, 'font_color': '#FFFFFF'})
+        level_1_style = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2})
+        level_1_style_left = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'left': 2})
+        level_1_style_right = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'bottom': 2, 'top': 2, 'right': 2})
+        level_2_style = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'top': 2})
+        level_2_style_left = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'top': 2, 'left': 2})
+        level_2_style_right = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'top': 2, 'right': 2})
         level_3_style = def_style
-        level_3_style_left = workbook.add_format({'font_name': 'Arial', 'left': 2})
-        level_3_style_right = workbook.add_format({'font_name': 'Arial', 'right': 2})
-        domain_style = workbook.add_format({'font_name': 'Arial', 'italic': True})
-        domain_style_left = workbook.add_format({'font_name': 'Arial', 'italic': True, 'left': 2})
-        domain_style_right = workbook.add_format({'font_name': 'Arial', 'italic': True, 'right': 2})
-        upper_line_style = workbook.add_format({'font_name': 'Arial', 'top': 2})
+        level_3_style_left = workbook.add_format(
+            {'font_name': 'Arial', 'left': 2})
+        level_3_style_right = workbook.add_format(
+            {'font_name': 'Arial', 'right': 2})
+        domain_style = workbook.add_format(
+            {'font_name': 'Arial', 'italic': True})
+        domain_style_left = workbook.add_format(
+            {'font_name': 'Arial', 'italic': True, 'left': 2})
+        domain_style_right = workbook.add_format(
+            {'font_name': 'Arial', 'italic': True, 'right': 2})
+        upper_line_style = workbook.add_format(
+            {'font_name': 'Arial', 'top': 2})
 
-        sheet.set_column(0, 0, 45) #  Set the first column width to 60
-        sheet.set_column(1, 1, 15) #  Set the first column width to 60
-        sheet.set_column(2, 2, 18) #  Set the first column width to 60
-        sheet.set_column(3, 3, 15) #  Set the first column width to 60
-        sheet.set_column(4, 4, 18) #  Set the first column width to 60
-        sheet.set_column(5, 6, 14) #  Set the first column width to 15
+        sheet.set_column(0, 0, 45)  # Set the first column width to 60
+        sheet.set_column(1, 1, 15)  # Set the first column width to 60
+        sheet.set_column(2, 2, 18)  # Set the first column width to 60
+        sheet.set_column(3, 3, 15)  # Set the first column width to 60
+        sheet.set_column(4, 4, 18)  # Set the first column width to 60
+        sheet.set_column(5, 6, 14)  # Set the first column width to 15
 
         super_columns = self._get_super_columns(options)
         y_offset = bool(super_columns.get('columns')) and 1 or 0
-        
+
         convert_date = self.env['ir.qweb.field.date'].value_to_html
 
-        f16_style = workbook.add_format({'font_name': 'Arial', 'bold': True, 'font_size': 18,'align': 'center'})
-        f14_style = workbook.add_format({'font_name': 'Arial', 'bold': True, 'font_size': 16,'align': 'center'})
+        f16_style = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'font_size': 18, 'align': 'center'})
+        f14_style = workbook.add_format(
+            {'font_name': 'Arial', 'bold': True, 'font_size': 16, 'align': 'center'})
         sheet.write(0, 2, self.env.user.company_id.name, f14_style)
         sheet.write(1, 2, options.get('reportname'), f16_style)
-        sheet.write(2, 2, convert_date('%s' % (options.get('date').get('date_from')), {'format': 'dd MMM YYYY'})+ ' - ' + convert_date('%s' % (options.get('date').get('date_to')), {'format': 'dd MMM YYYY'}), f14_style)
+        sheet.write(2, 2, convert_date('%s' % (options.get('date').get('date_from')), {
+                    'format': 'dd MMM YYYY'}) + ' - ' + convert_date('%s' % (options.get('date').get('date_to')), {'format': 'dd MMM YYYY'}), f14_style)
         y_offset = 4
 
         sheet.write(y_offset, 0, '', title_style)
         # Todo in master: Try to put this logic elsewhere
         x = super_columns.get('x_offset', 0)
         for super_col in super_columns.get('columns', []):
-            cell_content = super_col.get('string', '').replace('<br/>', ' ').replace('&nbsp;', ' ')
+            cell_content = super_col.get('string', '').replace(
+                '<br/>', ' ').replace('&nbsp;', ' ')
             x_merge = super_columns.get('merge')
             if x_merge and x_merge > 1:
-                sheet.merge_range(0, x, 0, x + (x_merge - 1), cell_content, super_col_style)
+                sheet.merge_range(0, x, 0, x + (x_merge - 1),
+                                  cell_content, super_col_style)
                 x += x_merge
             else:
                 sheet.write(0, x, cell_content, super_col_style)
                 x += 1
-        
+
         for row in self.get_header(options):
             x = 0
             for column in row:
                 colspan = column.get('colspan', 1)
-                header_label = column.get('name', '').replace('<br/>', ' ').replace('&nbsp;', ' ')
+                header_label = column.get('name', '').replace(
+                    '<br/>', ' ').replace('&nbsp;', ' ')
                 if colspan == 1:
                     sheet.write(y_offset, x, header_label, title_style)
                 else:
-                    sheet.merge_range(y_offset, x, y_offset, x + colspan - 1, header_label, title_style)
+                    sheet.merge_range(y_offset, x, y_offset,
+                                      x + colspan - 1, header_label, title_style)
                 x += colspan
             y_offset += 1
         ctx = self._set_context(options)
-        ctx.update({'no_format':True, 'print_mode':True})
+        ctx.update({'no_format': True, 'print_mode': True})
         lines = self.with_context(ctx)._get_lines(options)
 
         if options.get('hierarchy'):
@@ -187,9 +209,11 @@ class GstReport(models.TransientModel):
                 # if isinstance(lines[y]['columns'][x - 1], tuple):
                     # lines[y]['columns'][x - 1] = lines[y]['columns'][x - 1][0]
                 if x < len(lines[y]['columns']):
-                    sheet.write(y + y_offset, x + lines[y].get('colspan', 1) - 1, lines[y]['columns'][x - 1].get('name', ''), style)
+                    sheet.write(y + y_offset, x + lines[y].get('colspan', 1) - 1, lines[
+                                y]['columns'][x - 1].get('name', ''), style)
                 else:
-                    sheet.write(y + y_offset, x + lines[y].get('colspan', 1) - 1, lines[y]['columns'][x - 1].get('name', ''), style_right)
+                    sheet.write(y + y_offset, x + lines[y].get('colspan', 1) - 1, lines[
+                                y]['columns'][x - 1].get('name', ''), style_right)
             if 'total' in lines[y].get('class', '') or lines[y].get('level') == 0:
                 for x in range(len(lines[0]['columns']) + 1):
                     sheet.write(y + 1 + y_offset, x, None, upper_line_style)
@@ -211,8 +235,9 @@ class GstReport(models.TransientModel):
         convert_date = self.env['ir.qweb.field.date'].value_to_html
         lines = []
         if not line_id:
-            tax_cond = (', '.join(['%s' % (options['m%s' % (id)]) for id in range(20) if options['tm%s' % (id)] == True and options['m%s' % (id)]!= None ]))
-            if len(tax_cond)>0:
+            tax_cond = (', '.join(['%s' % (options['m%s' % (id)]) for id in range(
+                20) if options['tm%s' % (id)] == True and options['m%s' % (id)] != None]))
+            if len(tax_cond) > 0:
                 tax_cond = 'b.id in (%s)' % (tax_cond)
             else:
                 tax_cond = 'b.id = -1'
@@ -269,7 +294,7 @@ group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name) b wh
                     'level': 2,
                     'columns': [{'name': n} for n in ['', '', '', '', self.format_value(values['net']), self.format_value(values['tax'])]],
                     'unfoldable': True,
-                    'unfolded': 'tax_%s' % (current_id)  in options.get('unfolded_lines') or options.get('unfold_all'),
+                    'unfolded': 'tax_%s' % (current_id) in options.get('unfolded_lines') or options.get('unfold_all'),
                 })
 
             if 'tax_%s' % (current_id) in options.get('unfolded_lines') or options.get('unfold_all'):
@@ -298,9 +323,9 @@ where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date,
                 results1 = self.env.cr.dictfetchall()
 
                 domain_lines = []
-                remaining_lines = 0 
-                if not self.env.context.get('print_mode') or options.get('export_excel')==False:
-                    remaining_lines = len(results1) - offset  - self.MAX_LINES
+                remaining_lines = 0
+                if not self.env.context.get('print_mode') or options.get('export_excel') == False:
+                    remaining_lines = len(results1) - offset - self.MAX_LINES
                 row = 0
                 for values1 in results1:
                     row += 1
@@ -311,18 +336,19 @@ where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date,
                     #     lines.append(self._get_total(current_journal, current_account, results))
                     caret_type = 'account.move'
                     if values1['invoice_id']:
-                        caret_type = 'account.invoice.out' if options.get('reporttype') == 'sale' else 'account.invoice.in'
+                        caret_type = 'account.invoice.out' if options.get(
+                            'reporttype') == 'sale' else 'account.invoice.in'
                     elif values1['payment_id']:
                         caret_type = 'account.payment'
                     domain_lines.append({
                         'id': values1['id'],
-                        'name': values1['jentry'] if options.get('export_excel')==False else '',
+                        'name': values1['jentry'] if options.get('export_excel') == False else '',
                         'level': 4,
-                        'caret_options': caret_type if options.get('export_excel')==False else '',
-                        'parent_id': 'tax_%s' % (current_id) ,
+                        'caret_options': caret_type if options.get('export_excel') == False else '',
+                        'parent_id': 'tax_%s' % (current_id),
                         'columns': [{'name': n} for n in [values1['jentry'], values1['transtype'], convert_date('%s' % (values1['date']), {'format': 'YYYY-MM-dd'}), values1['ref'], self.format_value(values1['net']), self.format_value(values1['tax'])]],
                     })
-                    if options.get('export_excel')==False and self.MAX_LINES != None and row > offset + self.MAX_LINES:
+                    if options.get('export_excel') == False and self.MAX_LINES != None and row > offset + self.MAX_LINES:
                         break
 
                 # load more
@@ -330,17 +356,21 @@ where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date,
                     domain_lines.append({
                         'id': 'loadmore_%s' % current_id,
                         'offset': offset + self.MAX_LINES,
-                        'progress': (offset + self.MAX_LINES) / len(results1) * 100,
+                        'progress':
+                        (offset + self.MAX_LINES) / len(results1) * 100,
                         'class': 'o_account_reports_load_more text-center',
                         'parent_id': 'tax_%s' % current_id,
-                        'name': _('Load more... (%s remaining)') % remaining_lines,
-                        # 'colspan': 10 if self.user_has_groups('base.group_multi_currency') else 9,
+                        'name':
+                        _('Load more... (%s remaining)') % remaining_lines,
+                        # 'colspan': 10 if self.user_has_groups(
+                        #        'base.group_multi_currency') else 9,
                         'columns': [{}],
                     })
                 lines += domain_lines
 
         if not line_id:
-            total_columns = ['', '', '', '', self.format_value(total_net), self.format_value(total_tax)]
+            total_columns = ['', '', '', '', self.format_value(
+                total_net), self.format_value(total_tax)]
             lines.append({
                 'id': 'grouped_total',
                 'name': _('Total'),
@@ -348,82 +378,114 @@ where a.date>='%s' and a.date<='%s') b where b.tax_line_id = %s order by b.date,
                 'class': 'o_account_reports_domain_total',
                 'columns': [{'name': v} for v in total_columns],
             })
-        # # Append the total value for the last generated account line, if it was unfolded
-        # if self._need_to_unfold('account_%s_%s' % (current_account, current_journal), options):
-        #     lines.append(self._get_total(current_journal, current_account, results))
+        # # Append the total value for the last generated account line,
+        # # if it was unfolded
+        # if self._need_to_unfold('account_%s_%s' % (current_account,
+        #        current_journal), options):
+        #     lines.append(self._get_total(current_journal, current_account,
+        #    results))
 
         # # Append detail per month section
         # if not line_id:
-        #     lines.extend(self._get_line_total_per_month(options, values['company_id'], results))
+        #     lines.extend(self._get_line_total_per_month(options,
+        #       values['company_id'], results))
         return lines
-        # total_initial_balance = total_debit = total_credit = total_balance = 0.0
+        # total_initial_balance = total_debit = total_credit = \
+        #    total_balance = 0.0
 
     def get_report_informations(self, options):
+        company = self.env.user and self.env.user.company_id and \
+            self.env.user.company_id.id or 0
         if self._name != 'hv.gst.report':
             return super(GstReport, self).get_report_informations(options)
-        
+
         options = self._get_options(options)
         # apply date and date_comparison filter
         self._apply_date_filter(options)
         searchview_dict = {'options': options, 'context': self.env.context}
-        
-        select = """select coalesce(b.id,0) id, coalesce(b.name,'Unoriginal Tax') as name
-from (select tax_line_id as taxid, tax_base_amount as net, balance as tax, * from account_move_line a where account_id in 
-	(select account_id from account_tax where type_tax_use = '%s' and account_id is not null group by account_id)
-	union all
-	select c.id as taxid, balance as net, 0 as tax, a.* from account_move_line a,account_move_line_account_tax_rel b, account_tax c
-	where a.id=b.account_move_line_id and b.account_tax_id=c.id and c.type_tax_use = '%s'
-    union all
-	select 0 as taxid, balance  as net, 0 as tax, a.* from account_move_line a
-	where a.account_id in (select id from account_account as aa where aa.code='4060')) a
-	left join account_tax b on a.taxid = b.id
-	left join account_payment f on a.payment_id = f.id
-where a.date>='%s' and a.date<='%s'
-group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name
-            """  % (options.get('reporttype'), options.get('reporttype'), options.get('date').get('date_from'), options.get('date').get('date_to'))
+
+        select = """select coalesce(b.id,0) id,
+            coalesce(b.name,'Unoriginal Tax') as name
+            from
+                (select tax_line_id as taxid, tax_base_amount as net,
+                    balance as tax, * from account_move_line a where
+                    company_id = %s and
+                    account_id in (select account_id from account_tax where
+                        type_tax_use = '%s' and account_id is not null and
+                        company_id = %s
+                        group by account_id)
+                union all
+                   select c.id as taxid, balance as net, 0 as tax,
+                   a.* from account_move_line a,
+                   account_move_line_account_tax_rel b, account_tax c
+                   where a.id=b.account_move_line_id and b.account_tax_id=c.id
+                   and c.type_tax_use = '%s' and a.company_id = %s
+                union all
+                    select 0 as taxid, balance  as net, 0 as tax,
+                    a.* from account_move_line a where
+                    a.company_id = %s and
+                    a.account_id in (select id from account_account as aa where
+                    aa.code='4060' and aa.company_id = %s)) a
+                left join account_tax b on a.taxid = b.id
+                left join account_payment f on a.payment_id = f.id
+                where a.date>='%s' and a.date<='%s' and a.company_id = %s
+                group by coalesce(b.id,0),
+                coalesce(b.name,'Unoriginal Tax') order by name
+            """ % (company, options.get('reporttype'), company,
+                   options.get('reporttype'), company, company, company,
+                   options.get('date').get('date_from'),
+                   options.get('date').get('date_to'), company)
 
         self.env.cr.execute(select, [])
         results = self.env.cr.dictfetchall()
-        searchview_dict['gst_all'] = [(values['id'], values['name']) for values in results]
+        searchview_dict['gst_all'] = [
+            (values['id'], values['name']) for values in results]
         i = 0
         for values in results:
             options['m%s' % (i)] = values['id']
             i += 1
 
-        # Check whether there are unposted entries for the selected period or not (if the report allows it)
+        # Check whether there are unposted entries for the selected period or
+        # not (if the report allows it)
         if options.get('date') and options.get('all_entries') is not None:
-            date_to = options['date'].get('date_to') or options['date'].get('date') or fields.Date.today()
+            date_to = options['date'].get('date_to') or options[
+                'date'].get('date') or fields.Date.today()
             period_domain = [('state', '=', 'draft'), ('date', '<=', date_to)]
-            options['unposted_in_period'] = bool(self.env['account.move'].search_count(period_domain))
+            options['unposted_in_period'] = bool(
+                self.env['account.move'].search_count(period_domain))
 
         report_manager = self._get_report_manager(options)
 
         info = {'options': options,
                 'context': self.env.context,
                 'report_manager_id': report_manager.id,
-                'footnotes': [{'id': f.id, 'line': f.line, 'text': f.text} for f in report_manager.footnotes_ids],
+                'footnotes': [{'id': f.id, 'line': f.line, 'text': f.text}
+                              for f in report_manager.footnotes_ids],
                 'buttons': self._get_reports_buttons(),
                 'main_html': self.get_html(options),
-                'searchview_html': self.env['ir.ui.view'].render_template(self._get_templates().get('search_template', 'account_report.search_template'), values=searchview_dict),
+                'searchview_html': self.env['ir.ui.view'].render_template(
+                    self._get_templates().
+                    get('search_template', 'account_report.search_template'),
+                    values=searchview_dict),
                 }
         return info
 
     def _build_options(self, previous_options=None):
         options = super(GstReport, self)._build_options(previous_options)
         if self._context.get('reporttype') == 'sale':
-            options['reportname'] =  _('GST on Sales')
+            options['reportname'] = _('GST on Sales')
             if options['reporttype'] != 'sale':
                 for x in range(20):
                     options['tm%s' % (x)] = True
-            options['reporttype'] =  'sale'
+            options['reporttype'] = 'sale'
         else:
-            options['reportname'] =  _('GST on Purchases')
+            options['reportname'] = _('GST on Purchases')
             if options['reporttype'] != 'purchase':
                 for x in range(20):
                     options['tm%s' % (x)] = True
-            options['reporttype'] =  'purchase'
+            options['reporttype'] = 'purchase'
         for x in range(20):
-            options['m%s' % (x)] =  None
+            options['m%s' % (x)] = None
         return options
 
     def get_report_filename(self, options):
@@ -435,7 +497,8 @@ group by coalesce(b.id,0), coalesce(b.name,'Unoriginal Tax') order by name
     #     if self._name != 'hv.gst.report':
     #         return super(GstReport, self)._set_context(options)
     #     ctx = super(GstReport, self)._set_context(options)
-    #     ctx['partner_ids'] = self.env['account.tax'].browse([int(pid) for pid in options['partner_ids']])
+    #     ctx['partner_ids'] = self.env['account.tax'].\
+    #        browse([int(pid) for pid in options['partner_ids']])
     #     return ctx
 
     @api.model

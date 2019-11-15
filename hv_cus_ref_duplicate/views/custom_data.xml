@@ -13,4 +13,19 @@
             </xpath>
         </field>
     </record> -->
+
+    <!-- Inherited Sale Tree View to Add the Margin -->
+    <record model="ir.ui.view" id="view_quotation_tree_margin_inherit">
+        <field name="name">sale.order.margin.view.tree</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='amount_total']"
+                position="before">
+                    <field name="margin"
+                        groups="base.group_erp_manager"/>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

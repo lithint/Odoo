@@ -29,11 +29,10 @@
     'description': "",
     'author': "Havi Technology",
     'website': "havi.com.au",
-    'depends': ['base','sale'],
+    'depends': ['sale'],
     'data': [
         'ir.model.access.csv',
         'custom_data.xml',
-        ],
-    'demo_xml': [],
+    ],
     'installable': True,
 }
