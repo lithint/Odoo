@@ -31,11 +31,13 @@
     'website': "havi.com.au",
     'depends': [
         'sale_margin',
+        'account',
         'hv_message'
     ],
     'data': [
         'security/ir.model.access.csv',
-        'views/custom_data.xml'
+        'views/sale_margin_view.xml',
+        'views/account_invoice_view.xml'
     ],
     'demo_xml': [],
     'installable': True,

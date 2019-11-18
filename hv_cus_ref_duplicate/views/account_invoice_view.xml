@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_invoice_line_tree_inherit" model="ir.ui.view">
+        <field name="name">account.invoice.line.tree.inherit</field>
+        <field name="model">account.invoice.line</field>
+        <field name="inherit_id"
+            ref="account.view_invoice_line_tree"/>
+        <field name="arch" type="xml">
+            <field name="price_total" position="after">
+                <field name="margin"
+                    groups="base.group_erp_manager"/>
+                <field name="margin_in_per"
+                    groups="base.group_erp_manager"/>
+            </field>
+        </field>
+    </record>
+</odoo>

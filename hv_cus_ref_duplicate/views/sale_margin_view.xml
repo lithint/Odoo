@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- <record id="add_button_cus_ref_sale_order" model="ir.ui.view">
+        <field name="name">add.button.cus.ref.sale.order</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='client_order_ref']" position="after">
+                <field name="client_order_ref_dup" invisible="1"/>
+                <field name="id" invisible="1"/>
+                <field name="wanttosave" attrs="{'invisible': ['|',('client_order_ref_dup', '=', 0)]}" />
+                <button name="show_duplicate" icon="fa-arrow-right" type="object" string="Click to view duplicated SO." class="btn-link" attrs="{'invisible': [('client_order_ref_dup', '=', 0)]}"/>
+            </xpath>
+        </field>
+    </record> -->
+
+    <!-- Inherited Quotation Tree View to Add the Margin -->
+    <record model="ir.ui.view" id="view_quotation_tree_margin_inherit">
+        <field name="name">sale.order.margin.view.tree</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='amount_total']"
+                position="after">
+                    <field name="margin"
+                        groups="base.group_erp_manager"/>
+                    <field name="margin_in_per"
+                        groups="base.group_erp_manager"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherited Quotation Tree View to Add the Margin -->
+    <record model="ir.ui.view"
+            id="view_order_tree_margin_inherit">
+        <field name="name">sale.order.margin.view.tree.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='amount_total']"
+                position="after">
+                    <field name="margin"
+                        groups="base.group_erp_manager"/>
+                    <field name="margin_in_per"
+                        groups="base.group_erp_manager"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherited Form View for Sale Margin Module -->
+    <record model="ir.ui.view" id="sale_margin_sale_order_inherit">
+        <field name="name">sale.order.margin.view.form.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id"
+                ref="sale_margin.sale_margin_sale_order"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='margin']" position="attributes">
+                <attribute name="groups">-base.group_user,base.group_erp_manager</attribute>
+            </xpath>
+            <xpath expr="//field[@name='margin']" position="after">
+                 <field name="margin_in_per" groups="base.group_erp_manager"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/tree//field[@name='price_subtotal']" position="after">
+                <field name="margin" groups="base.group_erp_manager"/>
+                <field name="margin_in_per" groups="base.group_erp_manager"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/form//div[@name='discount']" position="after">
+                <label for="margin"/>
+                <div name="margin" >
+                     <field name="margin" groups="base.group_erp_manager"/>
+                </div>
+                <label for="margin_in_per"/>
+                <div name="margin_in_per" >
+                     <field name="margin_in_per" class="oe_inline" groups="base.group_erp_manager"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
