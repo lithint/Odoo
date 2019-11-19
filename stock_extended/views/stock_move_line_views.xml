@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inherited Product Moves (Report) Tree View  -->
+    <record id="view_move_line_tree_inherit" model="ir.ui.view">
+        <field name="name">stock.move.line.tree.inherit</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id"
+            ref="stock.view_move_line_tree"/>
+        <field name="arch" type="xml">
+            <field name="location_id" position="before">
+                <field name="partner_id"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Inherited Product Moves (Report) Form View  -->
+    <record id="view_move_line_form_inherit" model="ir.ui.view">
+        <field name="name">stock.move.line.form.inherit</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id"
+            ref="stock.view_move_line_form"/>
+        <field name="arch" type="xml">
+            <field name="location_id" position="before">
+                <field name="partner_id"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Action View Of the Product Moves Report -->
+    <record id="stock.stock_move_line_action"
+            model="ir.actions.act_window">
+        <field name="name">Product Moves</field>
+        <field name="res_model">stock.move.line</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,kanban,pivot,form</field>
+        <field name="view_id" ref="stock.view_move_line_tree"/>
+        <field name="domain">[["state","=","done"],["picking_id.picking_type_id.code","=","outgoing"],["location_dest_id","ilike","Partner Locations/Customers"]]</field>
+        <field name="context">{'group_by': ['product_id'], 'timeRangeMenuData': {'timeRange': [['date', '>=', (datetime.datetime.now() - relativedelta(years=1)).strftime('%Y-12-31 12:00:00')], ['date', '&lt;', datetime.datetime.now().strftime('%Y-12-31 12:00:00')]], 'timeRangeDescription': 'This Year', 'comparisonTimeRange': []}, 'pivot_measures': ['qty_done'], 'pivot_column_groupby': ['date:month'], 'pivot_row_groupby': ['product_id'], 'orderedBy': []}</field>
+        <field name="help" type="html">
+          <p class="o_view_nocontent_empty_folder">
+            There's no product move yet
+          </p>
+        </field>
+    </record>
+</odoo>
