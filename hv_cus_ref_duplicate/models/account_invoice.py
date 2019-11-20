@@ -16,7 +16,7 @@ class AccountInvoice(models.Model):
                                  string='Margin (%)',
                                  store=True)
 
-    @api.multi
+    # @api.multi
     @api.depends('invoice_line_ids', 'invoice_line_ids.quantity',
                  'invoice_line_ids.price_unit', 'invoice_line_ids.discount')
     def _get_invoice_margin_in_percentage(self):
@@ -52,7 +52,7 @@ class AccountInvoiceLine(models.Model):
                                  string='Margin (%)',
                                  store=True)
 
-    @api.multi
+    # @api.multi
     @api.depends('quantity', 'price_unit', 'discount')
     def _get_invoice_line_margin_in_per(self):
         sal_price = discount = line_cost = margin_amt = margin_in_per = 0.0
