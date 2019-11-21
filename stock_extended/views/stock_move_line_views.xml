@@ -7,6 +7,9 @@
         <field name="inherit_id"
             ref="stock.view_move_line_tree"/>
         <field name="arch" type="xml">
+            <field name="product_id" position="before">
+                <field name="return_qty"/>
+            </field>
             <field name="location_id" position="before">
                 <field name="parent_id"/>
                 <field name="partner_id"/>
@@ -21,6 +24,9 @@
         <field name="inherit_id"
             ref="stock.view_move_line_form"/>
         <field name="arch" type="xml">
+            <field name="product_id" position="before">
+                <field name="return_qty"/>
+            </field>
             <field name="location_id" position="before">
                 <field name="parent_id"/>
                 <field name="partner_id"/>
@@ -37,8 +43,8 @@
         <field name="view_type">form</field>
         <field name="view_mode">pivot,tree,kanban,form</field>
         <field name="view_id" ref="stock.view_move_line_tree"/>
-        <field name="domain">[["state","=","done"],["picking_id.picking_type_id.code","=","outgoing"],["location_dest_id","ilike","Partner Locations/Customers"]]</field>
-        <field name="context">{'group_by': ['product_id'], 'timeRangeMenuData': {'timeRange': [['date', '>=', (datetime.datetime.now() - relativedelta(years=1)).strftime('%Y-12-31 23:59:59')], ['date', '&lt;', datetime.datetime.now().strftime('%Y-12-31 23:59:59')]], 'timeRangeDescription': 'This Year', 'comparisonTimeRange': []}, 'pivot_measures': ['qty_done'], 'pivot_column_groupby': ['date:month'], 'pivot_row_groupby': ['product_id'], 'orderedBy': []}</field>
+        <field name="domain">[["state","=","done"],["picking_id.picking_type_id.code","=","outgoing"],'|',["location_dest_id","ilike","Partner Locations/Customers"],["location_id","ilike","Partner Locations/Customers"]]</field>
+        <field name="context">{'group_by': ['product_id'], 'timeRangeMenuData': {'timeRange': [['date', '>=', (datetime.datetime.now() - relativedelta(years=1)).strftime('%Y-12-31 23:59:59')], ['date', '&lt;', datetime.datetime.now().strftime('%Y-12-31 23:59:59')]], 'timeRangeDescription': 'This Year', 'comparisonTimeRange': []}, 'pivot_measures': ['qty_done','return_qty'], 'pivot_column_groupby': ['date:month'], 'pivot_row_groupby': ['product_id'], 'orderedBy': []}</field>
         <field name="help" type="html">
           <p class="o_view_nocontent_empty_folder">
             There's no product move yet

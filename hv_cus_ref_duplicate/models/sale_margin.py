@@ -31,17 +31,19 @@ class SaleOrderLine(models.Model):
     @api.depends('product_uom_qty', 'price_unit',
                  'discount', 'purchase_price')
     def _get_line_margin_in_percentage(self):
-        sale_price = discount = sale_cost = margin_amt = margin_in_per = 0.0
+        sale_price = sale_cost = margin_in_per = 0.0
+        # margin = (( sales price - cost ) / sales price ) * 100
         for rec in self:
             if rec.product_id:
                 sale_price = rec.price_unit * rec.product_uom_qty
-                discount = (sale_price * rec.discount) / 100
+                # discount = (sale_price * rec.discount) / 100
                 sale_cost = rec.purchase_price * rec.product_uom_qty
-                margin_amt = (sale_price - discount) - sale_cost
-                if sale_cost:
-                    margin_in_per = (margin_amt / sale_cost) * 100
+                # margin_amt = (sale_price - discount) - sale_cost
+                if sale_cost and sale_price:
+                    margin_in_per = \
+                        ((sale_price - sale_cost) / sale_price) * 100
                 else:
-                    margin_in_per = 100
+                    margin_in_per = 0.0
                 rec.margin_in_per = round(margin_in_per, 2)
 
 
@@ -59,19 +61,20 @@ class SaleOrder(models.Model):
                  'order_line.price_unit', 'order_line.discount',
                  'order_line.purchase_price')
     def _get_margin_in_percentage(self):
-        sale_price = discount = sale_cost = 0.0
-        line_cost = sal_line_margin_amt = margin_in_per = 0.0
+        sale_price = sale_cost = margin_in_per = 0.0
+        # line_cost = sal_line_margin_amt = margin_in_per = 0.0
+        # margin = (( sales price - cost ) / sales price ) * 100
         for rec in self:
             for sal_line in rec.order_line:
-                sale_price = sal_line.price_unit * sal_line.product_uom_qty
-                discount = (sale_price * sal_line.discount) / 100
-                sale_cost = sal_line.purchase_price * sal_line.product_uom_qty
-                line_cost += sale_cost
-                sal_line_margin_amt += (sale_price - discount) - sale_cost
-            if line_cost:
-                margin_in_per = (sal_line_margin_amt / line_cost) * 100
+                sale_price += sal_line.price_unit * sal_line.product_uom_qty
+                # discount = (sale_price * sal_line.discount) / 100
+                sale_cost += sal_line.purchase_price * sal_line.product_uom_qty
+                # line_cost += sale_cost
+                # sal_line_margin_amt += (sale_price - discount) - sale_cost
+            if sale_cost and sale_price:
+                margin_in_per = ((sale_price - sale_cost) / sale_price) * 100
             else:
-                margin_in_per = 100
+                margin_in_per = 0.0
             rec.margin_in_per = round(margin_in_per, 2)
 
     # client_order_ref_dup = fields.Integer(store=False)
