@@ -22,6 +22,7 @@
     # Views
     'data': [
         'views/stock_move_line_views.xml',
+        'views/template.xml'
     ],
 
     # Techical
