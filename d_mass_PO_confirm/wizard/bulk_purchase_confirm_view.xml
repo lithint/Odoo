@@ -1,0 +1,36 @@
+<odoo>
+    <record id="purchase_multi_confirm_view" model="ir.ui.view">
+        <field name="name">purchase.multi.confirm.view</field>
+        <field name="model">bulk.purchase.confirm</field>
+        <field name="arch" type="xml">
+            <form string="Confirm Purchase Order">
+                <p class="oe_grey">
+                   Are You Sure  You Want confirm Purchase Order 
+                    
+                </p>
+                <footer>
+                    <button string="Confirm Purchase Order" name="purchase_confirm" type="object" default_focus="1" class="oe_highlight"/>
+                    or
+                    <button string="Cancel" class="oe_link" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <act_window id="action_purchase_order_confirm"
+        multi="True"
+        key2="client_action_multi" name="Confirm Purchase Order"
+        res_model="bulk.purchase.confirm" src_model="purchase.order"
+        view_mode="form" target="new" view_type="form" />
+
+
+    <record id="action_purchase_cancel" model="ir.actions.act_window">
+        <field name="name">Cancel Selected order</field>
+        <field name="res_model">bulk.purchase.confirm</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="purchase_multi_confirm_view"/>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,44 @@
+<openerp>
+    <data>
+        <record id="invoice_form_inherited_add_sale_reference_form" model="ir.ui.view">
+            <field name="name">invoice.form.inherited.add.sale.reference.form</field>
+            <field name="model">account.invoice</field>
+            <field name="inherit_id" ref="account.invoice_form"/>
+            <field name="arch" type="xml">
+                <field name="payment_term_id" position="after">
+                    <field name="sale_id" readonly="True" attrs="{'invisible':[('type','!=','out_invoice')]}"/>
+                </field>
+            </field>
+        </record>
+
+        <record id="invoice_supplier_form_inherited_add_purchase_reference_form" model="ir.ui.view">
+            <field name="name">invoice.supplier.form.inherited.add.sale.purchase.reference.form</field>
+            <field name="model">account.invoice</field>
+            <field name="inherit_id" ref="account.invoice_supplier_form"/>
+            <field name="arch" type="xml">
+                <field name="payment_term_id" position="after">
+                    <field name="pur_id" readonly="True"/>
+                </field>
+            </field>
+        </record>
+
+                <record id="custom_picking_order_form" model="ir.ui.view">
+            <field name="name">picking.custom.form</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//div[@name='button_box']" position="inside">
+                    <button type="object"
+                        name="button_view_invoice"
+                        class="oe_stat_button"
+                        icon="fa-fw fa-pencil-square-o"
+                        attrs="{'invisible': [('invoice_count', '=', 0)]}" groups="base.group_user">
+                        <field name="invoice_count" widget="statinfo" string="Invoice"/>
+                    </button>
+
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</openerp>
