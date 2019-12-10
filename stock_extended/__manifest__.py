@@ -21,6 +21,7 @@
 
     # Views
     'data': [
+        'security/stock_security_view.xml',
         'views/stock_move_line_views.xml',
         'views/template.xml'
     ],
