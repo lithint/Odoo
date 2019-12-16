@@ -67,13 +67,15 @@ class hv_customer_account_invoice(models.Model):
 
     client_order_ref = fields.Char(compute='get_client_order_ref')
 
-    @api.one
+    @api.multi
     def get_client_order_ref(self):
-        if self.origin:
-            self.client_order_ref = self.env['sale.order'].\
-                search([('name', '=', self.origin)]).client_order_ref
-        else:
-            self.client_order_ref = ""
+        for invoice in self:
+            if invoice.origin:
+                invoice.client_order_ref = \
+                    self.env['sale.order'].search([
+                        ('name', '=', invoice.origin)]).client_order_ref
+            else:
+                invoice.client_order_ref = ""
 
     def _search_id(self, query):
         if not query:
@@ -83,6 +85,44 @@ class hv_customer_account_invoice(models.Model):
         if not res:
             return []
         return [[r[0], r[1], r[2]] for r in res]
+
+    @api.multi
+    def action_invoice_sent(self):
+        """Overridden method to segrigate the compose mail lables."""
+        result = super(hv_customer_account_invoice, self).action_invoice_sent()
+        TYPES = {
+            'out_invoice': _('Invoice'),
+            'in_invoice': _('Vendor Bill'),
+            'out_refund': _('Credit Note'),
+            'in_refund': _('Vendor Credit note'),
+        }
+        if self.type and self.type == 'out_refund':
+
+            template = self.env.ref(
+                'hv_customer_statement.email_tmpl_credit_note_invoice', False)
+            lang = self.env.context.get('lang')
+            if template and template.lang:
+                lang = template._render_template(template.lang,
+                                                 'account.invoice', self.id)
+            self = self.with_context(lang=lang)
+            result.update({
+                'name': _('Send Credit Note')
+            })
+            ctx = dict(
+                default_model='account.invoice',
+                default_res_id=self.id,
+                default_use_template=bool(template),
+                default_template_id=template and template.id or False,
+                default_composition_mode='comment',
+                mark_invoice_as_sent=True,
+                model_description=TYPES[self.type],
+                custom_layout="mail.mail_notification_paynow",
+                force_email=True
+            )
+            result.update({
+                'context': ctx
+            })
+        return result
 
 
 class hv_customer_statement_line(models.Model):
@@ -141,10 +181,15 @@ class hv_customer_statement_line(models.Model):
         self.balance = 0
         self.overdue = 0
         if self.invoice_ids:
-            # self.write({'invoice_ids': [(6, 0, [inv.id for inv in self.invoice_ids])]})
+            # self.write({'invoice_ids': [(6, 0, [inv.id for inv in
+            # self.invoice_ids])]})
             self.total += sum([i.invoice_id.amount_total_signed if i.invoice_id else i.amount_residual_currency if i.currency_id else i.amount_residual for i in self.invoice_ids if not i.blocked])
             self.balance += sum([i.invoice_id.residual_signed if i.invoice_id else i.amount_residual_currency if i.currency_id else i.amount_residual for i in self.invoice_ids if not i.blocked])
-            # self.overdue += sum([i.invoice_id.residual_signed if i.invoice_id else i.amount_residual_currency if i.currency_id else i.amount_residual for i in self.invoice_ids if ((i.invoice_id and i.invoice_id.date_due < fields.Date.today()) or (i.date_maturity or i.date) < fields.Date.today()) and not i.blocked])
+            # self.overdue += sum([i.invoice_id.residual_signed if i.invoice_id
+            # else i.amount_residual_currency if i.currency_id else
+            # i.amount_residual for i in self.invoice_ids if ((i.invoice_id and
+            # i.invoice_id.date_due < fields.Date.today()) or (i.date_maturity
+            # or i.date) < fields.Date.today()) and not i.blocked])
             self.overdue += sum([i.invoice_id.residual_signed for i in self.invoice_ids if (
                 i.invoice_id and i.invoice_id.date_due < fields.Date.today()) and not i.blocked])
         return True
@@ -165,26 +210,26 @@ class hv_customer_statement_line(models.Model):
             #                     """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id)
             query = """
                     SELECT max(m.id), max(m.id), max(m.id)
-                    from account_move_line m 
+                    from account_move_line m
                         inner join account_invoice i on m.invoice_id=i.id and i.amount_total_signed!=0 and i.state='open'
-	                    inner join account_account a on m.account_id = a.id 
+	                    inner join account_account a on m.account_id = a.id
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
                         and m.date  >= '%s' and m.date <= '%s'
-                        and (i.partner_id = %s) 
+                        and (i.partner_id = %s)
                         and (m.company_id = %s)
-                        and m.invoice_id is not null 
+                        and m.invoice_id is not null
                         group by m.invoice_id
                     union all
                     SELECT (m.id), (m.id), (m.id)
-                    from account_move_line m 
-	                    inner join account_account a on m.account_id = a.id 
+                    from account_move_line m
+	                    inner join account_account a on m.account_id = a.id
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
                         and m.date  >= '%s' and m.date <= '%s'
-                        and (m.partner_id = %s) 
-                        and (m.company_id = %s) 
-                        and m.invoice_id is null 
+                        and (m.partner_id = %s)
+                        and (m.company_id = %s)
+                        and m.invoice_id is null
                     """ % (start_date, statement_date , self.customer_id.id,
                            self.company_id and self.company_id.id or False,
                            start_date, statement_date, self.customer_id.id,
@@ -208,26 +253,26 @@ class hv_customer_statement_line(models.Model):
             #                     """ % (start_date, statement_date + timedelta(days=1), self.customer_id.id, self.customer_id.id)
             query = """
                     SELECT max(m.id), max(m.id), max(m.id)
-                    from account_move_line m 
+                    from account_move_line m
                         inner join account_invoice i on m.invoice_id=i.id and i.amount_total_signed!=0 and i.state='open'
-	                    inner join account_account a on m.account_id = a.id 
+	                    inner join account_account a on m.account_id = a.id
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
                         and m.date >= '%s' and m.date  <= '%s'
                         and (m.partner_id = %s)
                         and (m.company_id = %s)
-                        and m.invoice_id is not null 
+                        and m.invoice_id is not null
                         group by m.invoice_id
                     union all
                     SELECT (m.id), (m.id), (m.id)
-                    from account_move_line m 
-	                    inner join account_account a on m.account_id = a.id 
+                    from account_move_line m
+	                    inner join account_account a on m.account_id = a.id
 		                    and a.deprecated=false and a.internal_type ='receivable'
                     where m.reconciled=false and m.blocked=false
                     and m.date  >= '%s' and m.date  <= '%s'
                         and (m.partner_id = %s)
                         and (m.company_id = %s)
-                        and m.invoice_id is null 
+                        and m.invoice_id is null
                     """ % (start_date, statement_date, self.customer_id.id,
                            self.company_id and self.company_id.id or False,
                            start_date, statement_date, self.customer_id.id,
@@ -334,7 +379,7 @@ class hv_customer_statement(models.Model):
                     (select COALESCE(pa.parent_id,pa.id)
                         FROM account_move_line m
                             inner join res_partner pa on m.partner_id = pa.id and pa.customer=true
-                            inner join account_account a on m.account_id = a.id 
+                            inner join account_account a on m.account_id = a.id
                                 and a.deprecated=false and a.internal_type ='receivable'
                         where m.reconciled=false and m.blocked=false
                             and m.date >= '%s' and m.date <= '%s' and

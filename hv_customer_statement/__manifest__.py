@@ -36,8 +36,8 @@
     'data': [
         'security/ir.model.access.csv',
         'security/cust_statement_security.xml',
+        'data/email_template_view.xml',
         'views/custom_data.xml',
     ],
-    'demo_xml': [],
     'installable': True,
 }
