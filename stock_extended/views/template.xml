@@ -3,6 +3,7 @@
     <template id="assets_backend" inherit_id="web.assets_backend">
         <xpath expr="." position="inside">
             <script src="/stock_extended/static/src/js/pivot_filter.js" type="text/javascript"/>
+           <!--  <link rel="stylesheet" type="text/scss" href="/stock_extended/static/src/scss/custom_bg.scss"/> -->
         </xpath>
     </template>
 </odoo>

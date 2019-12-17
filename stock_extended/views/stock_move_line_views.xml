@@ -37,7 +37,7 @@
     <!-- Action View Of the Product Moves Report -->
     <record id="stock_move_line_with_filters_action"
             model="ir.actions.act_window">
-        <field name="name">Product Moves With Filters</field>
+        <field name="name">Net Sales</field>
         <field name="res_model">stock.move.line</field>
         <field name="type">ir.actions.act_window</field>
         <field name="view_type">form</field>
