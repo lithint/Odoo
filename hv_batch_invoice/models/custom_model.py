@@ -133,6 +133,13 @@ class hv_batch_invoice_writeoff(models.Model):
 class AccountAbstractPayment(models.AbstractModel):
     _inherit = 'account.abstract.payment'
 
+    @api.model
+    def _get_default_company(self):
+        company = self.env.user and self.env.user.company_id or False
+        return company
+
+    company_id = fields.Many2one("res.users", string="User",
+                                 default=_get_default_company)
     pack_id = fields.Many2one(
         'pack.rebate', string='Payment Model', stored=False)
     writeoff_account_ids = fields.One2many(
@@ -414,7 +421,7 @@ class hv_batch_invoice(models.Model):
     @api.depends('invoice_ids', 'customer_id')
     def _compute_total(self):
         for batch_iv in self:
-            if batch_iv.state == 'draft':
+            if batch_iv.state in ['draft', 'open']:
                 batch_iv.rebatepercent = batch_iv.customer_id and \
                     batch_iv.customer_id.parent_id and \
                     batch_iv.customer_id.parent_id.rebate or \
@@ -666,3 +673,7 @@ class PackRebate(models.Model):
     default = fields.Boolean(string='Payment Default', default=False)
     packline_ids = fields.One2many(
         'pack.rebate.line', 'pack_id', string='Account Ratio')
+    company_id = fields.Many2one('res.company',
+                                 string='Company',
+                                 default=lambda self: self.env['res.company'].
+                                 _company_default_get('pack.rebate'))
