@@ -4,6 +4,57 @@ odoo.define('stock_extended.pivot_filter', function(require) {
     var field_utils = require('web.field_utils');
     var PivotRenderer = require('web.PivotRenderer');
     var PivotController = require('web.PivotController');
+    var PivotModel = require('web.PivotModel');
+
+    PivotModel.include({
+        _computeRows: function () {
+            var self = this;
+            var aggregates, i;
+            var result = [];
+            var open_product_move_filter_view = (self.data.context.open_product_move_filter_view  == 1 )? true : false;
+            if(open_product_move_filter_view){
+                this._traverseTree(this.data.main_row.root, function (header) {
+                    var values = [],
+                    col_ids = [];
+                    result.push({
+                        id: header.id,
+                        col_ids: col_ids,
+                        indent: header.path.length - 1,
+                        title: header.path[header.path.length-1],
+                        expanded: header.expanded,
+                        values: values,
+                    });
+                    self._traverseTree(self.data.main_col.root, add_cells, header.id, values, col_ids);
+                    if (self.data.main_col.width > 1) {
+                        aggregates = self._getCellValue(header.id, self.data.main_col.root.id);
+                        for (i = 0; i < self.data.measures.length; i++) {
+                            if(open_product_move_filter_view && self.data.measures[i] == 'qty_done' && self.data.measures[i + 1] == 'return_qty'){
+                                values.push(aggregates && aggregates[self.data.measures[i]] - aggregates[self.data.measures[i+1]]);
+                            }else{
+                                values.push(aggregates && aggregates[self.data.measures[i]]);
+                            }
+                        }
+                        col_ids.push( self.data.main_col.root.id);
+                    }
+                });
+                return result;
+                function add_cells (col_hdr, row_id, values, col_ids) {
+                    if (col_hdr.expanded) return;
+                    col_ids.push(col_hdr.id);
+                    aggregates = self._getCellValue(row_id, col_hdr.id);
+                    for (i = 0; i < self.data.measures.length; i++) {
+                        if(open_product_move_filter_view && self.data && self.data.measures && self.data.measures[i] == 'qty_done' && self.data.measures[i + 1] == 'return_qty'){
+                            values.push(aggregates && aggregates[self.data.measures[i]] - aggregates[self.data.measures[i+1]]);
+                        }else{
+                            values.push(aggregates && aggregates[self.data.measures[i]]);
+                        }
+                    }
+                }
+            }else{
+                return this._super.apply(this, arguments);
+            }
+        },
+    });
 
     PivotRenderer.include({
         _renderRows: function ($tbody, rows) {
@@ -34,9 +85,9 @@ odoo.define('stock_extended.pivot_filter', function(require) {
                     for (j = 0; j < length; j++) {
                         value = rows[i].values[j];
                         name = this.state.measures[j % nbrMeasures];
-                        if(name == 'qty_done'){
-                            value = value- rows[i].values[j+1];
-                        }
+                        // if(name == 'qty_done'){
+                          //  value = value- rows[i].values[j+1];
+                        // }
                         formatter = field_utils.format[this.fieldWidgets[name] || measureTypes[j % nbrMeasures]];
                         measure = this.state.fields[name];
                         if (this.compare) {
@@ -104,7 +155,7 @@ odoo.define('stock_extended.pivot_filter', function(require) {
                     $tbody.append($row);
                 }
             }else{
-                this._super($tbody, rows)
+                this._super.apply(this, arguments);
             }
             
         },
